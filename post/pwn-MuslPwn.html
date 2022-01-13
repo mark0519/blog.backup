@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.mark0519.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="musl pwn 浅析musl libc 是一个专门为嵌入式系统开发的轻量级 libc 库，以简单、轻量和高效率为特色。有不少 Linux 发行版将其设为默认的 libc 库，用来代替体积臃肿的 glibc ，如Alpine Linux、OpenWrt和 Gentoo 等。 同时musl-1.1.x和musl-1.2.x的差距还比较大,结合几道题目简单分析下musl pwn的新姿势和调试技巧.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MuslPwn浅析">
+<meta property="og:url" content="https://blog.mark0519.com/post/pwn-MuslPwn.html">
+<meta property="og:site_name" content="Mark&#39;s blog">
+<meta property="og:description" content="musl pwn 浅析musl libc 是一个专门为嵌入式系统开发的轻量级 libc 库，以简单、轻量和高效率为特色。有不少 Linux 发行版将其设为默认的 libc 库，用来代替体积臃肿的 glibc ，如Alpine Linux、OpenWrt和 Gentoo 等。 同时musl-1.1.x和musl-1.2.x的差距还比较大,结合几道题目简单分析下musl pwn的新姿势和调试技巧.">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pic.imgdb.cn/item/619b96982ab3f51d91a44c83.png">
+<meta property="og:image" content="https://pic.imgdb.cn/item/619b96db2ab3f51d91a46583.png">
+<meta property="article:published_time" content="2021-11-22T07:20:55.000Z">
+<meta property="article:modified_time" content="2021-12-01T06:02:29.758Z">
+<meta property="article:author" content="Mark0519">
+<meta property="article:tag" content="pwn">
+<meta property="article:tag" content="python2">
+<meta property="article:tag" content="ctf">
+<meta property="article:tag" content="musl">
+<meta property="article:tag" content="gdb">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pic.imgdb.cn/item/619b96982ab3f51d91a44c83.png">
+
+<link rel="canonical" href="https://blog.mark0519.com/post/pwn-MuslPwn.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>MuslPwn浅析 | Mark's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mark's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/pwn-MuslPwn.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+      <meta itemprop="name" content="Mark0519">
+      <meta itemprop="description" content="菜鸡CTFer的自留地">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mark's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MuslPwn浅析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-11-22 15:20:55" itemprop="dateCreated datePublished" datetime="2021-11-22T15:20:55+08:00">2021-11-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-12-01 14:02:29" itemprop="dateModified" datetime="2021-12-01T14:02:29+08:00">2021-12-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PWN/" itemprop="url" rel="index"><span itemprop="name">PWN</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="musl-pwn-浅析"><a href="#musl-pwn-浅析" class="headerlink" title="musl pwn 浅析"></a>musl pwn 浅析</h1><p><a target="_blank" rel="noopener" href="https://www.musl-libc.org/">musl libc</a> 是一个专门为嵌入式系统开发的轻量级 libc 库，以简单、轻量和高效率为特色。有不少 Linux 发行版将其设为默认的 libc 库，用来代替体积臃肿的 glibc ，如Alpine Linux、OpenWrt和 Gentoo 等。</p>
+<p>同时musl-1.1.x和musl-1.2.x的差距还比较大,结合几道题目简单分析下musl pwn的新姿势和调试技巧.</p>
+<span id="more"></span>
+
+<h2 id="调试配置"><a href="#调试配置" class="headerlink" title="调试配置"></a>调试配置</h2><p>上网找不到什么能看的资料, 太惨了,下面都是我自己各个地方找到然后凑整理在一起的.</p>
+<p>首先的问题就是一般musl没法带符号调试, 题目给出的附件一般都是去符号表的.</p>
+<h3 id="musl源码编译"><a href="#musl源码编译" class="headerlink" title="musl源码编译"></a>musl源码编译</h3><p>还好musl的libc.so的小版本不多,常用的也就是<strong>v1.1.24</strong>和<strong>v1.2.2</strong>.,基本可以自己本地编译一份对应版本的有符号表的musl的libc文件.</p>
+<blockquote>
+<p> 附上各个版本的musl下载连接:<br>**musl libc Release History : **<a target="_blank" rel="noopener" href="https://musl.libc.org/releases.html">musl libc Release History</a></p>
+</blockquote>
+<p>具体的编译方法可以参考这位师傅的博客: <a target="_blank" rel="noopener" href="http://www.wangqingzheng.com/anquanke/1/241101.html">学习musl</a>.</p>
+<p>按照这位师傅的博客提供的编译方式编译完成之后,对应libc文件位于<code>musl_xxxx/build/lib/libc.so</code>.</p>
+<p>编译完成之后就可以开始准备调试了</p>
+<h3 id="GDB符号调试原理"><a href="#GDB符号调试原理" class="headerlink" title="GDB符号调试原理"></a>GDB符号调试原理</h3><p>源文件在编译时其实不携带源代码（以前以为 -g 命令就会带上源代码的QwQ）,而且源代码可能会移动，因此gdb需要一种方法寻找源代码文件的位置。gdb默认会有一个寻找源文件的列表叫做<code>source path</code>。<br>source path有两部分组成，<code>$cdir</code>和<code>$cwd</code>:</p>
+<blockquote>
+<p>$cdir:compile directory:如果加上了调试信息附加符号-g，$cdir会记录编译时文件夹绝对路径。如果没有加上-g就不会添加。这样也就可以理解为什么加上-g之后gdb可以找到文件源代码的原因了。<br>$cwd:current working directory当前工作目录。也就是当前gdb运行时目录.</p>
+</blockquote>
+<p><strong>一个例子:</strong></p>
+<p>如果编译时使用了 -g 选项记录了源文件路径是<code>/home/mark/Desktop/gdbtest/code_dir/pwn.c</code></p>
+<p>之后编译得到程序的目录是<code>/home/mark/Desktop/gdbtest/project_dir/pwn</code></p>
+<p>即<code>mark@mark-Ubuntu20:~/Desktop/gdbtest/code_dir$  gcc -g pwn.c -o ../project_dir/pwn</code></p>
+<p>在gdb中使用<code>info source</code>命令可以查看 源码信息,其中也包含编译信息:</p>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">pwndbg&gt; show dir
+Source directories searched: &#x2F;?:$cdir:$cwd
+pwndbg&gt; pwd
+&#x2F;home&#x2F;mark&#x2F;Desktop&#x2F;gdbtest&#x2F;project_dir
+pwndbg&gt; info source
+Current source file is pwn.c
+Compilation directory is &#x2F;home&#x2F;mark&#x2F;Desktop&#x2F;gdbtest&#x2F;code_dir
+Located in &#x2F;home&#x2F;mark&#x2F;Desktop&#x2F;gdbtest&#x2F;code_dir&#x2F;pwn.c
+Contains 12 lines.
+Source language is c.
+Producer is GNU C17 9.3.0 -mtune&#x3D;generic -march&#x3D;x86-64 -g -fasynchronous-unwind-tables -fstack-protector-strong -fstack-clash-protection -fcf-protection.
+Compiled with DWARF 2 debugging format.
+Does not include preprocessor macro info.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>手动添加源码路径的方式就是<code>dir</code>命令</p>
+<p>比如此时把pwn.c文件移动到/temp文件夹,只需要<code>dir /temp</code>,GDB就可以再次找到源码 </p>
+<h3 id="musl源码级调试"><a href="#musl源码级调试" class="headerlink" title="musl源码级调试"></a>musl源码级调试</h3><p>可以看到，如果我们添加<code>dir /home</code>就相当于在source path下面直接添加了一个文件夹，之后由于编译的时候我们include了malloc.c文件，就可以源码调试malloc文件。但是！这样没有debug symbol。<br>用如下方式添加源代码路径，注意要添加的是源代码路径的上层文件夹。（例如malloc.c在文件夹/home/src/aaaa/malloc.c中，就写命令<code>dir /home/src/aaaa</code>.</p>
+<p>这里我找了XCTF2020 高校战”疫”的一个musl题演示,我本地下载musl的源码并编译</p>
+<p>在存放该题的路径下启动GDB调试:</p>
+<p><code>dir /home/mark/Desktop/fucklibc/musl/musl-1.1.24/src/malloc</code></p>
+<p>这个路径包括了malloc的源码malloc.c文件,之后gdb就可以在malloc的源码层面调试这个题</p>
+<h3 id="debug-symbol调试"><a href="#debug-symbol调试" class="headerlink" title="debug symbol调试"></a>debug symbol调试</h3><p>题目一般给的附件都没有符号表信息,而一般给出的libc版本都是一些常见的大版本,我们只要本地编译一份,再使用GDB调试就可以带着符号表调试,更加有利于对一些陌生架构的调试.</p>
+<p>以musl为例,musl源码和调试方法上文已经给出,接下说怎么使用自己的libc文件.</p>
+<p>再exp中使用pwntools的本地连接的时候写成</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">p <span class="token operator">=</span> process<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token string">"/home/mark/Desktop/fucklibc/musl/musl-1.1.24/build/lib/libc.so"</span><span class="token punctuation">,</span><span class="token string">"./carbon"</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>之后再在exp中运行到<code>gdb.attach(p)</code>的时候,调试该程序就是带符号表的调试.</p>
+<p>查看效果:</p>
+<p><img src="https://pic.imgdb.cn/item/619b96982ab3f51d91a44c83.png"></p>
+<p>震惊一整年系列 !!!</p>
+<h2 id="musl-1-1-24"><a href="#musl-1-1-24" class="headerlink" title="musl-1.1.24"></a>musl-1.1.24</h2><p>musl-1.1.24是musl-1.1.x系列比较经典的版本,这里作为musl-1.1.x的代表简单分析下几个相关的数据结构</p>
+<p><strong>v1.1.24</strong>源码 : <a target="_blank" rel="noopener" href="https://git.musl-libc.org/cgit/musl/commit/?h=v1.1.24&id=ea9525c8bcf6170df59364c4bcd616de1acf8703">musl-1.1.24</a></p>
+<h3 id="结构体"><a href="#结构体" class="headerlink" title="结构体"></a>结构体</h3><p>1.1.24代表了比较老版本的Musl libc，该版本的内存管理有以下几个相关的结构体:</p>
+<h4 id="chunk"><a href="#chunk" class="headerlink" title="chunk"></a>chunk</h4><pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">struct</span> <span class="token class-name">chunk</span> <span class="token punctuation">&#123;</span>
+    <span class="token class-name">size_t</span> psize<span class="token punctuation">,</span> csize<span class="token punctuation">;</span>   <span class="token comment">// 与 glibc 的 prev size 和 size类似</span>
+    <span class="token keyword">struct</span> <span class="token class-name">chunk</span> <span class="token operator">*</span>next<span class="token punctuation">;</span> 
+    <span class="token keyword">struct</span> <span class="token class-name">chunk</span> <span class="token operator">*</span>prev<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><code>chunk</code>的结构大致与glibc类似，chunk之间不会复用任何区域。<code>psize</code>和<code>csize</code>的最后的1bit为<code>inuse</code>控制位。若设置<code>inuse</code>标志位为1，表示 chunk 正在被使用；若没有设置<code>inuse</code>标志位，表示 chunk 已经被释放或者通过<code>mmap</code>分配的，需要通过<code>psize</code>的标志位来进一步判断 chunk 的状态。<strong>chunk为0x20字节对齐的！！！</strong></p>
+<h4 id="mal"><a href="#mal" class="headerlink" title="mal"></a>mal</h4><pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">volatile</span> <span class="token class-name">uint64_t</span> binmap<span class="token punctuation">;</span>   <span class="token comment">// 记录bins中bins[i]是否非空</span>
+    <span class="token keyword">struct</span> <span class="token class-name">bin</span> bins<span class="token punctuation">[</span><span class="token number">64</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token keyword">volatile</span> <span class="token keyword">int</span> free_lock<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span> mal<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><code>mal</code>结构体类似于 glibc 中的<code>arena</code>，记录着堆的状态，有三个成员：64位无符号整数<code>binmap</code>、链表头部数组<code>bins</code>和锁<code>free_lock</code>。<code>binmap</code>记录每个 bin 是否为非空，若某个比特位为 1，表示对应的 bin 为非空，即 bin 链表中有 chunk。</p>
+<h4 id="bin"><a href="#bin" class="headerlink" title="bin"></a>bin</h4><pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">struct</span> <span class="token class-name">bin</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">volatile</span> <span class="token keyword">int</span> lock<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token keyword">struct</span> <span class="token class-name">chunk</span> <span class="token operator">*</span>head<span class="token punctuation">;</span>
+    <span class="token keyword">struct</span> <span class="token class-name">chunk</span> <span class="token operator">*</span>tail<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>bin 链表头部的结构如上。</p>
+<p><code>head</code>和<code>tail</code>指针分别指向首部和尾部的 chunk，同时首部 chunk 的<code>prev</code>指针和尾部 chunk 的<code>next</code>指针指向 bin 链表头部，这样构成了循环链表。当链表为空时，<code>head</code>和<code>tail</code>指针等于 0 或者指向链表头部自身。</p>
+<ul>
+<li><p>bin如果为空，head和tail为0或者指向bin自身。</p>
+</li>
+<li><p>bin如果非空，head和tail分别指向头和尾的chunk，头chunk的prev和尾chunk的next指向bin，构成双向链表。</p>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>bin 下标 i</th>
+<th>chunk 大小个数</th>
+<th>chunk 大小范围</th>
+<th>下标 i 与 chunk 大小范围的关系</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0-31</td>
+<td>1</td>
+<td>0x20 – 0x400</td>
+<td>(i+1) * 0x20</td>
+</tr>
+</tbody></table>
+<p>可以从源码中的<a target="_blank" rel="noopener" href="https://github.com/bminor/musl/blob/v1.1.24/src/malloc/malloc.c#L96"><code>bin_index_up</code></a>推导出, 前 32 个 bin 类似 fastbin 和 small bin，每个 bin 只对应一种大小的 chunk；后 32 个 bin 则类似 large bin，一个 bin 对应多种大小的 chunk。</p>
+<h3 id="malloc"><a href="#malloc" class="headerlink" title="malloc"></a>malloc</h3><p>源码:</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span> <span class="token operator">*</span><span class="token function">malloc</span><span class="token punctuation">(</span><span class="token class-name">size_t</span> n<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">struct</span> <span class="token class-name">chunk</span> <span class="token operator">*</span>c<span class="token punctuation">;</span>
+	<span class="token keyword">int</span> i<span class="token punctuation">,</span> j<span class="token punctuation">;</span>
+	<span class="token comment">// 使size n对齐</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">adjust_size</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>n<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>n <span class="token operator">></span> MMAP_THRESHOLD<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>	<span class="token comment">// n达到了mmap分配的阈值（0x38000），使用mmap分配</span>
+		<span class="token class-name">size_t</span> len <span class="token operator">=</span> n <span class="token operator">+</span> OVERHEAD <span class="token operator">+</span> PAGE_SIZE <span class="token operator">-</span> <span class="token number">1</span> <span class="token operator">&amp;</span> <span class="token operator">-</span>PAGE_SIZE<span class="token punctuation">;</span>
+		<span class="token keyword">char</span> <span class="token operator">*</span>base <span class="token operator">=</span> <span class="token function">__mmap</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> len<span class="token punctuation">,</span> PROT_READ<span class="token operator">|</span>PROT_WRITE<span class="token punctuation">,</span>
+			MAP_PRIVATE<span class="token operator">|</span>MAP_ANONYMOUS<span class="token punctuation">,</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>base <span class="token operator">==</span> <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+		c <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token punctuation">(</span>base <span class="token operator">+</span> SIZE_ALIGN <span class="token operator">-</span> OVERHEAD<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		c<span class="token operator">-></span>csize <span class="token operator">=</span> len <span class="token operator">-</span> <span class="token punctuation">(</span>SIZE_ALIGN <span class="token operator">-</span> OVERHEAD<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		c<span class="token operator">-></span>psize <span class="token operator">=</span> SIZE_ALIGN <span class="token operator">-</span> OVERHEAD<span class="token punctuation">;</span>
+		<span class="token keyword">return</span> <span class="token function">CHUNK_TO_MEM</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// 计算size对应的bin下标</span>
+	i <span class="token operator">=</span> <span class="token function">bin_index_up</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token punctuation">;</span><span class="token punctuation">;</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token class-name">uint64_t</span> mask <span class="token operator">=</span> mal<span class="token punctuation">.</span>binmap <span class="token operator">&amp;</span> <span class="token operator">-</span><span class="token punctuation">(</span><span class="token number">1ULL</span><span class="token operator">&lt;&lt;</span>i<span class="token punctuation">)</span><span class="token punctuation">;</span>	<span class="token comment">// 查找size > n的所有bin</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>mask<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>	<span class="token comment">// 没有能满足要求的bin，使用expand_heap申请新chunk</span>
+			c <span class="token operator">=</span> <span class="token function">expand_heap</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>c<span class="token punctuation">)</span> <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">alloc_rev</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">struct</span> <span class="token class-name">chunk</span> <span class="token operator">*</span>x <span class="token operator">=</span> c<span class="token punctuation">;</span>
+				c <span class="token operator">=</span> <span class="token function">PREV_CHUNK</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+				<span class="token function">NEXT_CHUNK</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token operator">-></span>psize <span class="token operator">=</span> c<span class="token operator">-></span>csize <span class="token operator">=</span>
+					x<span class="token operator">-></span>csize <span class="token operator">+</span> <span class="token function">CHUNK_SIZE</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">break</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		j <span class="token operator">=</span> <span class="token function">first_set</span><span class="token punctuation">(</span>mask<span class="token punctuation">)</span><span class="token punctuation">;</span>	<span class="token comment">// 获取最符合的size对应的bin</span>
+		<span class="token function">lock_bin</span><span class="token punctuation">(</span>j<span class="token punctuation">)</span><span class="token punctuation">;</span>			<span class="token comment">// 对该bin加锁</span>
+		c <span class="token operator">=</span> mal<span class="token punctuation">.</span>bins<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">.</span>head<span class="token punctuation">;</span>	<span class="token comment">// 取出bin头</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>c <span class="token operator">!=</span> <span class="token function">BIN_TO_CHUNK</span><span class="token punctuation">(</span>j<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">pretrim</span><span class="token punctuation">(</span>c<span class="token punctuation">,</span> n<span class="token punctuation">,</span> i<span class="token punctuation">,</span> j<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token function">unbin</span><span class="token punctuation">(</span>c<span class="token punctuation">,</span> j<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">//使用 pretrim 分割 c，使用 unbin 从链表中取出 c</span>
+			<span class="token function">unlock_bin</span><span class="token punctuation">(</span>j<span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token keyword">break</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token function">unlock_bin</span><span class="token punctuation">(</span>j<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// 回收 c 中大小超过 n 的部分</span>
+	<span class="token comment">/* Now patch up in case we over-allocated */</span>
+	<span class="token function">trim</span><span class="token punctuation">(</span>c<span class="token punctuation">,</span> n<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">return</span> <span class="token function">CHUNK_TO_MEM</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>分配过程主要有一下几个步骤：</p>
+<ul>
+<li>增加chunk头部，并且size对其0x20</li>
+<li>如果size大于MMAP_THRESHOLD，则使用mmap分配一块大小为size的内存</li>
+<li>如果size小于MMAP_THRESHOLD，计算size对应的bin下标：</li>
+<li>如果所有的bin都为空，延展堆空间，分配一个新的chunk；</li>
+<li>如果存在非空bin，选择与size最接近的bin，取bin首部的chunk，如果该chunk大小远大于size，使用pretrim分割chunk，否则unbin从链表中取出chunk。</li>
+<li>最后对chunk进行trim，主要是回收超过size的内存，减少内存浪费。</li>
+</ul>
+<h3 id="unbin"><a href="#unbin" class="headerlink" title="unbin"></a>unbin</h3><p>源码:</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">unbin</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">chunk</span> <span class="token operator">*</span>c<span class="token punctuation">,</span> <span class="token keyword">int</span> i<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>c<span class="token operator">-></span>prev <span class="token operator">==</span> c<span class="token operator">-></span>next<span class="token punctuation">)</span>
+		<span class="token function">a_and_64</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>mal<span class="token punctuation">.</span>binmap<span class="token punctuation">,</span> <span class="token operator">~</span><span class="token punctuation">(</span><span class="token number">1ULL</span><span class="token operator">&lt;&lt;</span>i<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	c<span class="token operator">-></span>prev<span class="token operator">-></span>next <span class="token operator">=</span> c<span class="token operator">-></span>next<span class="token punctuation">;</span>
+	c<span class="token operator">-></span>next<span class="token operator">-></span>prev <span class="token operator">=</span> c<span class="token operator">-></span>prev<span class="token punctuation">;</span>
+	c<span class="token operator">-></span>csize <span class="token operator">|=</span> C_INUSE<span class="token punctuation">;</span>
+	<span class="token function">NEXT_CHUNK</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token operator">-></span>psize <span class="token operator">|=</span> C_INUSE<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><code>ubin</code>相当于早期的<code>unlink</code>没有对双向链表进行检查，所以可以造成任意地址写。</p>
+<h3 id="free"><a href="#free" class="headerlink" title="free"></a>free</h3><pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span> <span class="token function">free</span><span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span>p<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>p<span class="token punctuation">)</span> <span class="token keyword">return</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">struct</span> <span class="token class-name">chunk</span> <span class="token operator">*</span>self <span class="token operator">=</span> <span class="token function">MEM_TO_CHUNK</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token comment">// 若 csize 没有设置 inuse 标志位，检查是否为 mmap chunk 或者 double free</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">IS_MMAPPED</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token function">unmap_chunk</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">else</span>
+		<span class="token function">__bin_chunk</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">unmap_chunk</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">chunk</span> <span class="token operator">*</span>self<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token class-name">size_t</span> extra <span class="token operator">=</span> self<span class="token operator">-></span>psize<span class="token punctuation">;</span>
+	<span class="token keyword">char</span> <span class="token operator">*</span>base <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">char</span> <span class="token operator">*</span><span class="token punctuation">)</span>self <span class="token operator">-</span> extra<span class="token punctuation">;</span>
+	<span class="token class-name">size_t</span> len <span class="token operator">=</span> <span class="token function">CHUNK_SIZE</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span> <span class="token operator">+</span> extra<span class="token punctuation">;</span>
+	<span class="token comment">/* Crash on double free */</span> <span class="token comment">// 如果psize设置了inuse位，说明该chunk不是来着mmap分配的，double free</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>extra <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token function">a_crash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token function">__munmap</span><span class="token punctuation">(</span>base<span class="token punctuation">,</span> len<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="静态堆内存"><a href="#静态堆内存" class="headerlink" title="静态堆内存"></a>静态堆内存</h3><p>程序初始化之后，查看mal结构体，会发现bins非空，有一个libc中的堆区和程序段的堆区。</p>
+<p><img src="https://pic.imgdb.cn/item/619b96db2ab3f51d91a46583.png"></p>
+<h2 id="musl-1-2-2"><a href="#musl-1-2-2" class="headerlink" title="musl-1.2.2"></a>musl-1.2.2</h2><p>musl-1.2.2是musl-1.2.x系列比较现在题目最多见的版本,同时和musl-1.1.x的差别也比较大,新增了不少新东西.</p>
+<p><strong>v1.2.2</strong>源码 : <a target="_blank" rel="noopener" href="https://musl.libc.org/releases/musl-1.2.2.tar.gz">musl-1.2.2</a></p>
+<p>未完待续………..</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+              <a href="/tags/python2/" rel="tag"># python2</a>
+              <a href="/tags/ctf/" rel="tag"># ctf</a>
+              <a href="/tags/musl/" rel="tag"># musl</a>
+              <a href="/tags/gdb/" rel="tag"># gdb</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/post/pwn-house-of-husk.html" rel="prev" title="pwn-house_of_husk">
+      <i class="fa fa-chevron-left"></i> pwn-house_of_husk
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/post/wp-N1ctf-babyfmt.html" rel="next" title="N1CTF-babyFMT">
+      N1CTF-babyFMT <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#musl-pwn-%E6%B5%85%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">musl pwn 浅析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E8%AF%95%E9%85%8D%E7%BD%AE"><span class="nav-number">1.1.</span> <span class="nav-text">调试配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#musl%E6%BA%90%E7%A0%81%E7%BC%96%E8%AF%91"><span class="nav-number">1.1.1.</span> <span class="nav-text">musl源码编译</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#GDB%E7%AC%A6%E5%8F%B7%E8%B0%83%E8%AF%95%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.2.</span> <span class="nav-text">GDB符号调试原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#musl%E6%BA%90%E7%A0%81%E7%BA%A7%E8%B0%83%E8%AF%95"><span class="nav-number">1.1.3.</span> <span class="nav-text">musl源码级调试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#debug-symbol%E8%B0%83%E8%AF%95"><span class="nav-number">1.1.4.</span> <span class="nav-text">debug symbol调试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#musl-1-1-24"><span class="nav-number">1.2.</span> <span class="nav-text">musl-1.1.24</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%84%E4%BD%93"><span class="nav-number">1.2.1.</span> <span class="nav-text">结构体</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#chunk"><span class="nav-number">1.2.1.1.</span> <span class="nav-text">chunk</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#mal"><span class="nav-number">1.2.1.2.</span> <span class="nav-text">mal</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#bin"><span class="nav-number">1.2.1.3.</span> <span class="nav-text">bin</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#malloc"><span class="nav-number">1.2.2.</span> <span class="nav-text">malloc</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#unbin"><span class="nav-number">1.2.3.</span> <span class="nav-text">unbin</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#free"><span class="nav-number">1.2.4.</span> <span class="nav-text">free</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9D%99%E6%80%81%E5%A0%86%E5%86%85%E5%AD%98"><span class="nav-number">1.2.5.</span> <span class="nav-text">静态堆内存</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#musl-1-2-2"><span class="nav-number">1.3.</span> <span class="nav-text">musl-1.2.2</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Mark0519"
+      src="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+  <p class="site-author-name" itemprop="name">Mark0519</p>
+  <div class="site-description" itemprop="description">菜鸡CTFer的自留地</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">65</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mark0519" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mark0519" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:sunjiajun@bupt.edu.cn" title="E-Mail → mailto:sunjiajun@bupt.edu.cn" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Mark0519</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

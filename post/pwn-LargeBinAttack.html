@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.mark0519.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[PWN]Large Bin Attack 平时做题很少遇到,但是一旦遇到就完全不会 (">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pwn-LargeBinAttack">
+<meta property="og:url" content="https://blog.mark0519.com/post/pwn-LargeBinAttack.html">
+<meta property="og:site_name" content="Mark&#39;s blog">
+<meta property="og:description" content="[PWN]Large Bin Attack 平时做题很少遇到,但是一旦遇到就完全不会 (">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210120161024708.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQxMjAyMjM3,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2021-11-04T05:25:54.000Z">
+<meta property="article:modified_time" content="2021-11-21T14:16:20.818Z">
+<meta property="article:author" content="Mark0519">
+<meta property="article:tag" content="pwn">
+<meta property="article:tag" content="python2">
+<meta property="article:tag" content="ctf">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20210120161024708.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQxMjAyMjM3,size_16,color_FFFFFF,t_70">
+
+<link rel="canonical" href="https://blog.mark0519.com/post/pwn-LargeBinAttack.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>pwn-LargeBinAttack | Mark's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mark's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/pwn-LargeBinAttack.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+      <meta itemprop="name" content="Mark0519">
+      <meta itemprop="description" content="菜鸡CTFer的自留地">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mark's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          pwn-LargeBinAttack
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-11-04 13:25:54" itemprop="dateCreated datePublished" datetime="2021-11-04T13:25:54+08:00">2021-11-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-11-21 22:16:20" itemprop="dateModified" datetime="2021-11-21T22:16:20+08:00">2021-11-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PWN/" itemprop="url" rel="index"><span itemprop="name">PWN</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="PWN-Large-Bin-Attack"><a href="#PWN-Large-Bin-Attack" class="headerlink" title="[PWN]Large Bin Attack"></a>[PWN]Large Bin Attack</h1><blockquote>
+<p>平时做题很少遇到,但是一旦遇到就完全不会 (</p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="Large-bin"><a href="#Large-bin" class="headerlink" title="Large bin"></a>Large bin</h2><p>large bin中一共包括63个bin，每个bin中的chunk大小不一致，而是出于一定区间范围内。此外这63个bin被分成了6组，每组bin中的chunk之间的公差一致.</p>
+<p>被释放进Large Bin中的chunk，除了以前经常见到的prev_size、size、fd、bk之外，还具有fd_nextsize和bk_nextsize:</p>
+<p>fd_nextsize，bk_nextsize：只有chunk可先的时候才使用，不过用于较大的chunk（large chunk）<br>fd_nextsize指向前一个与当前chunk大小不同的第一个空闲块，不包含bin的头指针<br>bk_nextsize指向后一个与当前chunk大小不同的第一个空闲块，不包含bin的头指针<br>一般空闲的large chunk在fd的遍历顺序中，按照由大到小的顺序排列。这样可以避免在寻找合适chunk时挨个遍历</p>
+<p><strong>Largebin的插入</strong></p>
+<p>在index相同的情况下：</p>
+<p>1、按照大小，从大到小排序（小的链接large bin块）<br>2、如果大小相同，按照free的时间排序<br>3、多个大小相同的堆块，只有首堆块的fd_nextsize和bk_nextsize会指向其他堆块，后面的堆块的fd_nextsize和bk_nextsize均为0<br>4、size最大的chunk的bk_nextsize指向最小的chunk，size最小的chunk的fd_nextsize指向最大的chunk</p>
+<h2 id="Large-bin-Attack"><a href="#Large-bin-Attack" class="headerlink" title="Large bin Attack"></a>Large bin Attack</h2><p>经典How2heap:</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token comment">// gcc -g -no-pie pwn.c -o pwn</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;stdio.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;stdlib.h></span></span>
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token keyword">unsigned</span> <span class="token keyword">long</span> stack_var1 <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token keyword">unsigned</span> <span class="token keyword">long</span> stack_var2 <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token function">fprintf</span><span class="token punctuation">(</span><span class="token constant">stderr</span><span class="token punctuation">,</span> <span class="token string">"stack_var1 (%p): %ld\n"</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>stack_var1<span class="token punctuation">,</span> stack_var1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">fprintf</span><span class="token punctuation">(</span><span class="token constant">stderr</span><span class="token punctuation">,</span> <span class="token string">"stack_var2 (%p): %ld\n\n"</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>stack_var2<span class="token punctuation">,</span> stack_var2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">unsigned</span> <span class="token keyword">long</span> <span class="token operator">*</span>p1 <span class="token operator">=</span> <span class="token function">malloc</span><span class="token punctuation">(</span><span class="token number">0x320</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">malloc</span><span class="token punctuation">(</span><span class="token number">0x20</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">unsigned</span> <span class="token keyword">long</span> <span class="token operator">*</span>p2 <span class="token operator">=</span> <span class="token function">malloc</span><span class="token punctuation">(</span><span class="token number">0x400</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">malloc</span><span class="token punctuation">(</span><span class="token number">0x20</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">unsigned</span> <span class="token keyword">long</span> <span class="token operator">*</span>p3 <span class="token operator">=</span> <span class="token function">malloc</span><span class="token punctuation">(</span><span class="token number">0x400</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">malloc</span><span class="token punctuation">(</span><span class="token number">0x20</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">free</span><span class="token punctuation">(</span>p1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">free</span><span class="token punctuation">(</span>p2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">void</span><span class="token operator">*</span> p4 <span class="token operator">=</span> <span class="token function">malloc</span><span class="token punctuation">(</span><span class="token number">0x90</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">free</span><span class="token punctuation">(</span>p3<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    p2<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">0x3f1</span><span class="token punctuation">;</span>
+    p2<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    p2<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    p2<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>stack_var1 <span class="token operator">-</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    p2<span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">long</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>stack_var2 <span class="token operator">-</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">malloc</span><span class="token punctuation">(</span><span class="token number">0x90</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">fprintf</span><span class="token punctuation">(</span><span class="token constant">stderr</span><span class="token punctuation">,</span> <span class="token string">"stack_var1 (%p): %p\n"</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>stack_var1<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span>stack_var1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">fprintf</span><span class="token punctuation">(</span><span class="token constant">stderr</span><span class="token punctuation">,</span> <span class="token string">"stack_var2 (%p): %p\n"</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>stack_var2<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span>stack_var2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>首先在第10行下断点,得到两个栈上参数:</p>
+<pre class="line-numbers language-none"><code class="language-none">stack_var1 (0x7fffffffde18): 0
+stack_var2 (0x7fffffffde20): 0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>接下来在第16行下断点,得到6个chunk,其中malloc(0x20)的chunk都是为了防止chunk合并而申请的</p>
+<pre class="line-numbers language-none"><code class="language-none">Allocated chunk | PREV_INUSE  &lt;-- p1
+Addr: 0x602000
+Size: 0x331
+
+Allocated chunk | PREV_INUSE
+Addr: 0x602330
+Size: 0x31
+
+Allocated chunk | PREV_INUSE  &lt;-- p2
+Addr: 0x602360
+Size: 0x411
+
+Allocated chunk | PREV_INUSE
+Addr: 0x602770
+Size: 0x31
+
+Allocated chunk | PREV_INUSE  &lt;-- p3
+Addr: 0x6027a0
+Size: 0x411
+
+Allocated chunk | PREV_INUSE
+Addr: 0x602bb0
+Size: 0x31<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>之后释放p1 ,在第17行下断点</p>
+<pre class="line-numbers language-none"><code class="language-none">unsortedbin
+all: 0x602000 —▸ 0x7ffff7dd1b78 (main_arena+88) ◂— 0x602000
+#      [p1]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>之后释放p2 ,在第18行下断点</p>
+<pre class="line-numbers language-none"><code class="language-none">unsortedbin
+all: 0x602360 —▸ 0x602000 —▸ 0x7ffff7dd1b78 (main_arena+88) ◂— 0x602360 &#x2F;* &#39;&#96;#&#96;&#39; *&#x2F;
+#      [p2]        [p1]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>由于 P1 的 size 为 0x330，P2 的 size 为 0x410，两个 chunk 的 size 均超过了 fast chunk 的最大值，所以在释放 P1、P2 的时候，两个 chunk 均进入 unsortbin 链表中。这里还可以细分，由于 P1 的 size 小于 0x3F0，所以<code>P1最终应该归属为small bin中</code>。P2 大于 0x3F0，所以<code>P2最终应该归属为large bin中</code></p>
+<p>接下来执行切割,执行<code>void* p4 = malloc(0x90);</code>,在第19行下断点:</p>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">pwndbg&gt; bins
+unsortedbin
+all: 0x6020a0 —▸ 0x7ffff7dd1b78 (main_arena+88) ◂— 0x6020a0
+largebins
+0x400: 0x602360 —▸ 0x7ffff7dd1f68 (main_arena+1096) ◂— 0x602360 &#x2F;* &#39;&#96;#&#96;&#39; *&#x2F;
+pwndbg&gt; heap
+Allocated chunk | PREV_INUSE  &lt;----------p4
+Addr: 0x602000
+Size: 0xa1
+
+Free chunk (unsortedbin) | PREV_INUSE  &lt;--(p1-p4)
+Addr: 0x6020a0
+Size: 0x291
+fd: 0x7ffff7dd1b78
+bk: 0x7ffff7dd1b78
+
+Allocated chunk
+Addr: 0x602330
+Size: 0x30
+
+Free chunk (largebins) | PREV_INUSE  &lt;-----p2
+Addr: 0x602360
+Size: 0x411
+fd: 0x7ffff7dd1f68
+bk: 0x7ffff7dd1f68
+fd_nextsize: 0x602360
+bk_nextsize: 0x602360
+
+Allocated chunk
+Addr: 0x602770
+Size: 0x30
+
+Allocated chunk | PREV_INUSE  &lt;-------------p3
+Addr: 0x6027a0
+Size: 0x411
+
+Allocated chunk | PREV_INUSE
+Addr: 0x602bb0
+Size: 0x31
+
+Top chunk | PREV_INUSE  &lt;-------------top_chunk
+Addr: 0x602be0
+Size: 0x20421<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这段代码执行了很多操作:</p>
+<ul>
+<li>从 unsorted bin 中拿出最后一个 chunk(P1)</li>
+<li>把这个 chunk(P1) 放进 small bin 中，并标记这个 small bin 中有空闲的 chunk</li>
+<li>从 unsorted bin 中拿出最后一个 chunk(P2)（P1 被拿走之后 P2 就作为最后一个 chunk 了）</li>
+<li>把这个 chunk(P2) 放进 large bin 中，并标记这个 large bin 有空先的 chunk</li>
+<li>现在 unsorted bin 中为空，从 small bin 中的 P1 中分割出一个小 chunk，满足请求的 P4</li>
+<li>并把剩下的 chunk(0x330 - 0xa0=0x290)  放回 unsorted bin 中</li>
+</ul>
+<p>之后释放P3,在第20行下断点</p>
+<pre class="line-numbers language-none"><code class="language-none">unsortedbin
+all: 0x6027a0 —▸ 0x6020a0 —▸ 0x7ffff7dd1b78 (main_arena+88) ◂— 0x6027a0
+smallbins
+empty
+largebins
+0x400: 0x602360 —▸ 0x7ffff7dd1f68 (main_arena+1096) ◂— 0x602360 &#x2F;* &#39;&#96;#&#96;&#39; *&#x2F;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>由于 P3 的 size 也是<code>大于0x3F0</code>的，所以首先会被挂进<code>unsorted bin</code>中进行过度</p>
+<p>之后修改P2内容,在第25行下断点:</p>
+<p>修改前:</p>
+<pre class="line-numbers language-none"><code class="language-none">pwndbg&gt; x&#x2F;20gx 0x602360
+0x602360:	0x0000000000000000	0x0000000000000411
+0x602370:	0x00007ffff7dd1f68	0x00007ffff7dd1f68
+0x602380:	0x0000000000602360	0x0000000000602360<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>修改后:</p>
+<pre class="line-numbers language-none"><code class="language-none">pwndbg&gt; x&#x2F;20gx 0x602360
+0x602360:	0x0000000000000000	0x00000000000003f1
+0x602370:	0x0000000000000000	0x00007fffffffde08(stack_var1-0x10)
+0x602380:	0x0000000000000000	0x00007fffffffde00(stack_var2-0x20)
+
+largebins
+0x400 [corrupted]
+FD: 0x602360 ◂— 0x0
+BK: 0x602360 —▸ 0x7fffffffde08 ◂— 0x0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>可以看到，有五处内容被修改：</p>
+<ul>
+<li>size 部分由原来的 0x411 修改成<code>0x3f1</code>(重点)</li>
+<li>fd 部分置空（不超过一个地址位长度的数据都可以）</li>
+<li>bk 由 0x7ffff7dd1f68 修改成了<code>stack_var1_addr - 0x10(0x7fffffffde08)</code></li>
+<li>fd_nextsize 置空（不超过一个地址位长度的数据都可以）</li>
+<li>bk_nextsize 修改成<code>stack_var2_addr - 0x20(0x7fffffffde00)</code></li>
+</ul>
+<p><img src="https://img-blog.csdnimg.cn/20210120161024708.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQxMjAyMjM3,size_16,color_FFFFFF,t_70"></p>
+<p>这里需要注意的是一个 chunk 的 bk 指向的是它的后一个被释放 chunk 的头指针，bk_nextsize 指向后一个与当前 chunk 大小不同的第一个空闲块的头指针：</p>
+<ul>
+<li>也就是说当前 P2 的 bk 指向的是一个以<code>stack_var1_addr - 0x10</code>为头指针的 chunk，这里记做 fake_chunk1，那么就意味着<code>stack_var1_addr</code>是作为这个 fake_chunk1 的<code>fd</code>指针。那么此时<code>P2 --&gt; bk --&gt; fd</code>就是 stack_var1_addr</li>
+<li>P2 的 fd_nextsize 指向的是一个以<code>stack_var2_addr</code>为头指针的 chunk，这里记做 fake_chunk2，那么就意味着<code>stack_var2_addr</code>是作为这个 fake_chunk2 的<code>fd_nextsize</code>指针。那么此时<code>P2 --&gt; bk_nextsize --&gt; fd_nextsize</code>就是 stack_var2_addr</li>
+</ul>
+<p>把P3挂进Largebin,在第26行下断点:</p>
+<p>使程序执行malloc(0x90);完成申请 size 为 0xa0 的 chunk。这一步也很关键，与第一次分割 chunk 的过程一致，首先从 unsorted bin 中拿出最后一个 chunk(P1_left size = 0x290)，并放入 small bin 中标记该序列的 small bin 有空闲 chunk。再从 unsorted bin 中拿出最后一个 chunk(P3 size = 0x410)，P3 的 size 是大于0x3f0的，所以理所应当应该向large bin中挂.</p>
+<p>查看修改结果:</p>
+<pre class="line-numbers language-none"><code class="language-none">stack_var1 (0x7fffffffde18): 0x6027a0
+stack_var2 (0x7fffffffde20): 0x6027a0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>可以看到此时 stack_var1 和 stack_var2 中的值已经被修改成了 P3 的头指针<code>0x6027a0</code></p>
+<h2 id="总结-large-bin-attack-的利用方法"><a href="#总结-large-bin-attack-的利用方法" class="headerlink" title="总结 large bin attack 的利用方法"></a>总结 large bin attack 的利用方法</h2><p>how2heap 中也说了，large bin attack 是未来更深入的利用。总结一下利用的条件：</p>
+<ul>
+<li>可以修改一个 large bin chunk 的 data</li>
+<li>从 unsorted bin 中来的 large bin chunk 要紧跟在被构造过的 chunk 的后面</li>
+<li>通过 large bin attack 可以辅助 Tcache Stash Unlink+ 攻击</li>
+<li>可以修改 _IO_list_all 便于伪造 _IO_FILE 结构体进行 FSOP。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+              <a href="/tags/python2/" rel="tag"># python2</a>
+              <a href="/tags/ctf/" rel="tag"># ctf</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/post/wp-PWNHUB%E5%85%AC%E5%BC%80%E8%B5%9Bgirl.html" rel="prev" title="wp-PWNHUB公开赛girl">
+      <i class="fa fa-chevron-left"></i> wp-PWNHUB公开赛girl
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/post/pwn-house-of-husk.html" rel="next" title="pwn-house_of_husk">
+      pwn-house_of_husk <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#PWN-Large-Bin-Attack"><span class="nav-number">1.</span> <span class="nav-text">[PWN]Large Bin Attack</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Large-bin"><span class="nav-number">1.1.</span> <span class="nav-text">Large bin</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Large-bin-Attack"><span class="nav-number">1.2.</span> <span class="nav-text">Large bin Attack</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93-large-bin-attack-%E7%9A%84%E5%88%A9%E7%94%A8%E6%96%B9%E6%B3%95"><span class="nav-number">1.3.</span> <span class="nav-text">总结 large bin attack 的利用方法</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Mark0519"
+      src="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+  <p class="site-author-name" itemprop="name">Mark0519</p>
+  <div class="site-description" itemprop="description">菜鸡CTFer的自留地</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">65</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mark0519" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mark0519" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:sunjiajun@bupt.edu.cn" title="E-Mail → mailto:sunjiajun@bupt.edu.cn" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Mark0519</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

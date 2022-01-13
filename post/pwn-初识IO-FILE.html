@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.mark0519.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="初识IO_FILEFILE 介绍FILE 在 Linux 系统的标准 IO 库中是用于描述文件的结构，称为文件流。 FILE 结构在程序执行 fopen 等函数时会进行创建，并分配在堆中。常定义一个指向 FILE 结构的指针来接收这个返回值。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pwn-初识IO_FILE">
+<meta property="og:url" content="https://blog.mark0519.com/post/pwn-%E5%88%9D%E8%AF%86IO-FILE.html">
+<meta property="og:site_name" content="Mark&#39;s blog">
+<meta property="og:description" content="初识IO_FILEFILE 介绍FILE 在 Linux 系统的标准 IO 库中是用于描述文件的结构，称为文件流。 FILE 结构在程序执行 fopen 等函数时会进行创建，并分配在堆中。常定义一个指向 FILE 结构的指针来接收这个返回值。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-07-14T03:34:28.000Z">
+<meta property="article:modified_time" content="2021-11-21T14:15:26.886Z">
+<meta property="article:author" content="Mark0519">
+<meta property="article:tag" content="pwn">
+<meta property="article:tag" content="python2">
+<meta property="article:tag" content="ctf">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.mark0519.com/post/pwn-%E5%88%9D%E8%AF%86IO-FILE.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>pwn-初识IO_FILE | Mark's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mark's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/pwn-%E5%88%9D%E8%AF%86IO-FILE.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+      <meta itemprop="name" content="Mark0519">
+      <meta itemprop="description" content="菜鸡CTFer的自留地">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mark's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          pwn-初识IO_FILE
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-14 11:34:28" itemprop="dateCreated datePublished" datetime="2021-07-14T11:34:28+08:00">2021-07-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-11-21 22:15:26" itemprop="dateModified" datetime="2021-11-21T22:15:26+08:00">2021-11-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PWN/" itemprop="url" rel="index"><span itemprop="name">PWN</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="初识IO-FILE"><a href="#初识IO-FILE" class="headerlink" title="初识IO_FILE"></a>初识IO_FILE</h1><h2 id="FILE-介绍"><a href="#FILE-介绍" class="headerlink" title="FILE 介绍"></a>FILE 介绍</h2><p>FILE 在 Linux 系统的标准 IO 库中是用于描述文件的结构，称为文件流。 FILE 结构在程序执行 fopen 等函数时会进行创建，并分配在堆中。常定义一个指向 FILE 结构的指针来接收这个返回值。</p>
+<span id="more"></span>
+
+<p>FILE 结构定义在 libio.h 中，如下所示</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">struct</span> <span class="token class-name">_IO_FILE</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">int</span> _flags<span class="token punctuation">;</span>       <span class="token comment">/* High-order word is _IO_MAGIC; rest is flags. */</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">_IO_file_flags</span> <span class="token expression">_flags</span></span>
+
+  <span class="token comment">/* The following pointers correspond to the C++ streambuf protocol. */</span>
+  <span class="token comment">/* Note:  Tk uses the _IO_read_ptr and _IO_read_end fields directly. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_read_ptr<span class="token punctuation">;</span>   <span class="token comment">/* Current read pointer */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_read_end<span class="token punctuation">;</span>   <span class="token comment">/* End of get area. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_read_base<span class="token punctuation">;</span>  <span class="token comment">/* Start of putback+get area. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_write_base<span class="token punctuation">;</span> <span class="token comment">/* Start of put area. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_write_ptr<span class="token punctuation">;</span>  <span class="token comment">/* Current put pointer. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_write_end<span class="token punctuation">;</span>  <span class="token comment">/* End of put area. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_buf_base<span class="token punctuation">;</span>   <span class="token comment">/* Start of reserve area. */</span>
+  <span class="token keyword">char</span><span class="token operator">*</span> _IO_buf_end<span class="token punctuation">;</span>    <span class="token comment">/* End of reserve area. */</span>
+  <span class="token comment">/* The following fields are used to support backing up and undo. */</span>
+  <span class="token keyword">char</span> <span class="token operator">*</span>_IO_save_base<span class="token punctuation">;</span> <span class="token comment">/* Pointer to start of non-current get area. */</span>
+  <span class="token keyword">char</span> <span class="token operator">*</span>_IO_backup_base<span class="token punctuation">;</span>  <span class="token comment">/* Pointer to first valid character of backup area */</span>
+  <span class="token keyword">char</span> <span class="token operator">*</span>_IO_save_end<span class="token punctuation">;</span> <span class="token comment">/* Pointer to end of non-current get area. */</span>
+
+  <span class="token keyword">struct</span> <span class="token class-name">_IO_marker</span> <span class="token operator">*</span>_markers<span class="token punctuation">;</span>
+
+  <span class="token keyword">struct</span> <span class="token class-name">_IO_FILE</span> <span class="token operator">*</span>_chain<span class="token punctuation">;</span>
+
+  <span class="token keyword">int</span> _fileno<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression"><span class="token number">0</span></span></span>
+  <span class="token keyword">int</span> _blksize<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">else</span></span>
+  <span class="token keyword">int</span> _flags2<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+  _IO_off_t _old_offset<span class="token punctuation">;</span> <span class="token comment">/* This used to be _offset but it's too small.  */</span>
+
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">__HAVE_COLUMN</span> <span class="token comment">/* temporary */</span></span>
+  <span class="token comment">/* 1+column number of pbase(); 0 is unknown. */</span>
+  <span class="token keyword">unsigned</span> <span class="token keyword">short</span> _cur_column<span class="token punctuation">;</span>
+  <span class="token keyword">signed</span> <span class="token keyword">char</span> _vtable_offset<span class="token punctuation">;</span>
+  <span class="token keyword">char</span> _shortbuf<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+  <span class="token comment">/*  char* _save_gptr;  char* _save_egptr; */</span>
+
+  _IO_lock_t <span class="token operator">*</span>_lock<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">ifdef</span> <span class="token expression">_IO_USE_OLD_IO_FILE</span></span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+<span class="token keyword">struct</span> <span class="token class-name">_IO_FILE_complete</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token keyword">struct</span> <span class="token class-name">_IO_FILE</span> _file<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">if</span> <span class="token expression">defined _G_IO_IO_FILE_VERSION <span class="token operator">&amp;&amp;</span> _G_IO_IO_FILE_VERSION <span class="token operator">==</span> <span class="token number">0x20001</span></span></span>
+  _IO_off64_t _offset<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span> <span class="token directive keyword">if</span> <span class="token expression">defined _LIBC <span class="token operator">||</span> defined _GLIBCPP_USE_WCHAR_T</span></span>
+  <span class="token comment">/* Wide character stream stuff.  */</span>
+  <span class="token keyword">struct</span> <span class="token class-name">_IO_codecvt</span> <span class="token operator">*</span>_codecvt<span class="token punctuation">;</span>
+  <span class="token keyword">struct</span> <span class="token class-name">_IO_wide_data</span> <span class="token operator">*</span>_wide_data<span class="token punctuation">;</span>
+  <span class="token keyword">struct</span> <span class="token class-name">_IO_FILE</span> <span class="token operator">*</span>_freeres_list<span class="token punctuation">;</span>
+  <span class="token keyword">void</span> <span class="token operator">*</span>_freeres_buf<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span> <span class="token directive keyword">else</span></span>
+  <span class="token keyword">void</span> <span class="token operator">*</span>__pad1<span class="token punctuation">;</span>
+  <span class="token keyword">void</span> <span class="token operator">*</span>__pad2<span class="token punctuation">;</span>
+  <span class="token keyword">void</span> <span class="token operator">*</span>__pad3<span class="token punctuation">;</span>
+  <span class="token keyword">void</span> <span class="token operator">*</span>__pad4<span class="token punctuation">;</span>
+
+  <span class="token class-name">size_t</span> __pad5<span class="token punctuation">;</span>
+  <span class="token keyword">int</span> _mode<span class="token punctuation">;</span>
+  <span class="token comment">/* Make sure we don't get into trouble again.  */</span>
+  <span class="token keyword">char</span> _unused2<span class="token punctuation">[</span><span class="token number">15</span> <span class="token operator">*</span> <span class="token keyword">sizeof</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token number">4</span> <span class="token operator">*</span> <span class="token keyword">sizeof</span> <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token keyword">sizeof</span> <span class="token punctuation">(</span><span class="token class-name">size_t</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>进程中的 FILE 结构会通过_chain 域彼此连接形成一个链表，链表头部用全局变量_IO_list_all 表示，通过这个值我们可以遍历所有的 FILE 结构。</p>
+<p>在标准 I/O 库中，每个程序启动时有三个文件流是自动打开的：stdin、stdout、stderr。因此在初始状态下，_IO_list_all 指向了一个有这些文件流构成的链表，但是需要注意的是这<strong>三个文件流位于 libc.so 的数据段</strong>。而使用 fopen 创建的文件流是<strong>分配在堆内存</strong>上的。</p>
+<p>可以在 libc.so 中找到 stdin\stdout\stderr 等符号，这些符号是指向 FILE 结构的指针，真正结构的符号是</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">_IO_2_1_stderr_
+_IO_2_1_stdout_
+_IO_2_1_stdin_<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>但是事实上_IO_FILE 结构外包裹着另一种结构_IO_FILE_plus，其中包含了一个重要的指针 vtable 指向了一系列函数指针。</p>
+<p>在 libc2.23 版本下，32 位的 vtable 偏移为 0x94，64 位偏移为 0xd8</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">struct</span> <span class="token class-name">_IO_FILE_plus</span>
+<span class="token punctuation">&#123;</span>
+    _IO_FILE    file<span class="token punctuation">;</span>
+    IO_jump_t   <span class="token operator">*</span>vtable<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>vtable 是 IO_jump_t 类型的指针，IO_jump_t 中保存了一些函数指针，在后面我们会看到在一系列标准 IO 函数中会调用这些函数指针</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span> <span class="token operator">*</span> funcs<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+   <span class="token number">1</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// "extra word"</span>
+   <span class="token number">2</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// DUMMY</span>
+   <span class="token number">3</span> exit<span class="token punctuation">,</span> <span class="token comment">// finish</span>
+   <span class="token number">4</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// overflow</span>
+   <span class="token number">5</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// underflow</span>
+   <span class="token number">6</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// uflow</span>
+   <span class="token number">7</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// pbackfail</span>
+   
+   <span class="token number">8</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// xsputn  #printf</span>
+   <span class="token number">9</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// xsgetn</span>
+   <span class="token number">10</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// seekoff</span>
+   <span class="token number">11</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// seekpos</span>
+   <span class="token number">12</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// setbuf</span>
+   <span class="token number">13</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// sync</span>
+   <span class="token number">14</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// doallocate</span>
+   <span class="token number">15</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// read</span>
+   <span class="token number">16</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// write</span>
+   <span class="token number">17</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// seek</span>
+   <span class="token number">18</span> pwn<span class="token punctuation">,</span>  <span class="token comment">// close</span>
+   <span class="token number">19</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// stat</span>
+   <span class="token number">20</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// showmanyc</span>
+   <span class="token number">21</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token comment">// imbue</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="fread"><a href="#fread" class="headerlink" title="fread"></a>fread</h2><p>fread 是标准 IO 库函数，作用是从文件流中读数据，函数原型如下</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token class-name">size_t</span> <span class="token function">fread</span> <span class="token punctuation">(</span> <span class="token keyword">void</span> <span class="token operator">*</span>buffer<span class="token punctuation">,</span> <span class="token class-name">size_t</span> size<span class="token punctuation">,</span> <span class="token class-name">size_t</span> count<span class="token punctuation">,</span> FILE <span class="token operator">*</span>stream<span class="token punctuation">)</span> <span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<ul>
+<li>buffer 存放读取数据的缓冲区。</li>
+<li>size：指定每个记录的长度。</li>
+<li>count： 指定记录的个数。</li>
+<li>stream：目标文件流。</li>
+<li>返回值：返回读取到数据缓冲区中的记录个数</li>
+</ul>
+<p>fread 的代码位于 / libio/iofread.c 中，函数名为_IO_fread，但真正的功能实现在子函数_IO_sgetn 中。</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">_IO_size_t
+<span class="token function">_IO_fread</span> <span class="token punctuation">(</span>buf<span class="token punctuation">,</span> size<span class="token punctuation">,</span> count<span class="token punctuation">,</span> fp<span class="token punctuation">)</span>
+     <span class="token keyword">void</span> <span class="token operator">*</span>buf<span class="token punctuation">;</span>
+     _IO_size_t size<span class="token punctuation">;</span>
+     _IO_size_t count<span class="token punctuation">;</span>
+     _IO_FILE <span class="token operator">*</span>fp<span class="token punctuation">;</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+  bytes_read <span class="token operator">=</span> <span class="token function">_IO_sgetn</span> <span class="token punctuation">(</span>fp<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">char</span> <span class="token operator">*</span><span class="token punctuation">)</span> buf<span class="token punctuation">,</span> bytes_requested<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>在_IO_sgetn 函数中会调用_IO_XSGETN，而_IO_XSGETN 是_IO_FILE_plus.vtable 中的函数指针，在调用这个函数时会首先取出 vtable 中的指针然后再进行调用。</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">_IO_size_t
+<span class="token function">_IO_sgetn</span> <span class="token punctuation">(</span>fp<span class="token punctuation">,</span> data<span class="token punctuation">,</span> n<span class="token punctuation">)</span>
+     _IO_FILE <span class="token operator">*</span>fp<span class="token punctuation">;</span>
+     <span class="token keyword">void</span> <span class="token operator">*</span>data<span class="token punctuation">;</span>
+     _IO_size_t n<span class="token punctuation">;</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token keyword">return</span> <span class="token function">_IO_XSGETN</span> <span class="token punctuation">(</span>fp<span class="token punctuation">,</span> data<span class="token punctuation">,</span> n<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>在默认情况下函数指针是指向_IO_file_xsgetn 函数的，</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">if</span> <span class="token punctuation">(</span>fp<span class="token operator">-></span>_IO_buf_base
+        <span class="token operator">&amp;&amp;</span> want <span class="token operator">&lt;</span> <span class="token punctuation">(</span><span class="token class-name">size_t</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>fp<span class="token operator">-></span>_IO_buf_end <span class="token operator">-</span> fp<span class="token operator">-></span>_IO_buf_base<span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">__underflow</span> <span class="token punctuation">(</span>fp<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token constant">EOF</span><span class="token punctuation">)</span>
+      <span class="token keyword">break</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">continue</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="fwrite"><a href="#fwrite" class="headerlink" title="fwrite"></a>fwrite</h2><p>fwrite 同样是标准 IO 库函数，作用是向文件流写入数据，函数原型如下</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token class-name">size_t</span> <span class="token function">fwrite</span><span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">void</span><span class="token operator">*</span> buffer<span class="token punctuation">,</span> <span class="token class-name">size_t</span> size<span class="token punctuation">,</span> <span class="token class-name">size_t</span> count<span class="token punctuation">,</span> FILE<span class="token operator">*</span> stream<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<ul>
+<li>buffer: 是一个指针，对 fwrite 来说，是要写入数据的地址;</li>
+<li>size: 要写入内容的单字节数;</li>
+<li>count: 要进行写入 size 字节的数据项的个数;</li>
+<li>stream: 目标文件指针;</li>
+<li>返回值：实际写入的数据项个数 count。</li>
+</ul>
+<p>fwrite 的代码位于 / libio/iofwrite.c 中，函数名为_IO_fwrite。 在_IO_fwrite 中主要是调用_IO_XSPUTN 来实现写入的功能。</p>
+<p>根据前面对_IO_FILE_plus 的介绍，可知_IO_XSPUTN 位于_IO_FILE_plus 的 vtable 中，调用这个函数需要首先取出 vtable 中的指针，再跳过去进行调用。</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">written <span class="token operator">=</span> <span class="token function">_IO_sputn</span> <span class="token punctuation">(</span>fp<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span><span class="token punctuation">)</span> buf<span class="token punctuation">,</span> request<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>在_IO_XSPUTN 对应的默认函数_IO_new_file_xsputn 中会调用同样位于 vtable 中的_IO_OVERFLOW</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token comment">/* Next flush the (full) buffer. */</span>
+     <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">_IO_OVERFLOW</span> <span class="token punctuation">(</span>f<span class="token punctuation">,</span> <span class="token constant">EOF</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token constant">EOF</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>_IO_OVERFLOW 默认对应的函数是_IO_new_file_overflow</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">if</span> <span class="token punctuation">(</span>ch <span class="token operator">==</span> <span class="token constant">EOF</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> <span class="token function">_IO_do_write</span> <span class="token punctuation">(</span>f<span class="token punctuation">,</span> f<span class="token operator">-></span>_IO_write_base<span class="token punctuation">,</span>
+             f<span class="token operator">-></span>_IO_write_ptr <span class="token operator">-</span> f<span class="token operator">-></span>_IO_write_base<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>f<span class="token operator">-></span>_IO_write_ptr <span class="token operator">==</span> f<span class="token operator">-></span>_IO_buf_end <span class="token punctuation">)</span> <span class="token comment">/* Buffer is really full */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">_IO_do_flush</span> <span class="token punctuation">(</span>f<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token constant">EOF</span><span class="token punctuation">)</span>
+      <span class="token keyword">return</span> <span class="token constant">EOF</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>在_IO_new_file_overflow 内部最终会调用系统接口 write 函数</p>
+<h2 id="fopen"><a href="#fopen" class="headerlink" title="fopen"></a>fopen</h2><p>fopen 在标准 IO 库中用于打开文件，函数原型如下</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">FILE <span class="token operator">*</span><span class="token function">fopen</span><span class="token punctuation">(</span><span class="token keyword">char</span> <span class="token operator">*</span>filename<span class="token punctuation">,</span> <span class="token operator">*</span>type<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<ul>
+<li>filename: 目标文件的路径</li>
+<li>type: 打开方式的类型</li>
+<li>返回值: 返回一个文件指针</li>
+</ul>
+<p>在 fopen 内部会创建 FILE 结构并进行一些初始化操作，下面来看一下这个过程</p>
+<p>首先在 fopen 对应的函数__fopen_internal 内部会调用 malloc 函数，分配 FILE 结构的空间。因此我们可以获知 FILE 结构是存储在堆上的</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token operator">*</span>new_f <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">locked_FILE</span> <span class="token operator">*</span><span class="token punctuation">)</span> <span class="token function">malloc</span> <span class="token punctuation">(</span><span class="token keyword">sizeof</span> <span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">locked_FILE</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>之后会为创建的 FILE 初始化 vtable，并调用_IO_file_init 进一步初始化操作</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">_IO_JUMPS</span> <span class="token punctuation">(</span><span class="token operator">&amp;</span>new_f<span class="token operator">-></span>fp<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token operator">&amp;</span>_IO_file_jumps<span class="token punctuation">;</span>
+<span class="token function">_IO_file_init</span> <span class="token punctuation">(</span><span class="token operator">&amp;</span>new_f<span class="token operator">-></span>fp<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+
+
+<p>在_IO_file_init 函数的初始化操作中，会调用_IO_link_in 把新分配的 FILE 链入_IO_list_all 为起始的 FILE 链表中</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span>
+<span class="token function">_IO_link_in</span> <span class="token punctuation">(</span>fp<span class="token punctuation">)</span>
+     <span class="token keyword">struct</span> <span class="token class-name">_IO_FILE_plus</span> <span class="token operator">*</span>fp<span class="token punctuation">;</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>fp<span class="token operator">-></span>file<span class="token punctuation">.</span>_flags <span class="token operator">&amp;</span> _IO_LINKED<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#123;</span>
+      fp<span class="token operator">-></span>file<span class="token punctuation">.</span>_flags <span class="token operator">|=</span> _IO_LINKED<span class="token punctuation">;</span>
+      fp<span class="token operator">-></span>file<span class="token punctuation">.</span>_chain <span class="token operator">=</span> <span class="token punctuation">(</span>_IO_FILE <span class="token operator">*</span><span class="token punctuation">)</span> _IO_list_all<span class="token punctuation">;</span>
+      _IO_list_all <span class="token operator">=</span> fp<span class="token punctuation">;</span>
+      <span class="token operator">++</span>_IO_list_all_stamp<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+
+<p>之后__fopen_internal 函数会调用_IO_file_fopen 函数打开目标文件，_IO_file_fopen 会根据用户传入的打开模式进行打开操作，总之最后会调用到系统接口 open 函数，这里不再深入。</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">_IO_file_fopen</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>_IO_FILE <span class="token operator">*</span><span class="token punctuation">)</span> new_f<span class="token punctuation">,</span> filename<span class="token punctuation">,</span> mode<span class="token punctuation">,</span> is32<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token constant">NULL</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> <span class="token function">__fopen_maybe_mmap</span> <span class="token punctuation">(</span><span class="token operator">&amp;</span>new_f<span class="token operator">-></span>fp<span class="token punctuation">.</span>file<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+
+
+<p>总结一下 fopen 的操作是</p>
+<ul>
+<li>使用 malloc 分配 FILE 结构</li>
+<li>设置 FILE 结构的 vtable</li>
+<li>初始化分配的 FILE 结构</li>
+<li>将初始化的 FILE 结构链入 FILE 结构链表中</li>
+<li>调用系统调用打开文件</li>
+</ul>
+<h2 id="fclose"><a href="#fclose" class="headerlink" title="fclose"></a>fclose</h2><p>fclose 是标准 IO 库中用于关闭已打开文件的函数，其作用与 fopen 相反。</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">fclose</span><span class="token punctuation">(</span>FILE <span class="token operator">*</span>stream<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>功能：关闭一个文件流，使用 fclose 就可以把缓冲区内最后剩余的数据输出到磁盘文件中，并释放文件指针和有关的缓冲区</p>
+<p>fclose 首先会调用_IO_unlink_it 将指定的 FILE 从_chain 链表中脱链</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">if</span> <span class="token punctuation">(</span>fp<span class="token operator">-></span>_IO_file_flags <span class="token operator">&amp;</span> _IO_IS_FILEBUF<span class="token punctuation">)</span>
+    <span class="token function">_IO_un_link</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">_IO_FILE_plus</span> <span class="token operator">*</span><span class="token punctuation">)</span> fp<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>之后会调用_IO_file_close_it 函数，_IO_file_close_it 会调用系统接口 close 关闭文件</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">if</span> <span class="token punctuation">(</span>fp<span class="token operator">-></span>_IO_file_flags <span class="token operator">&amp;</span> _IO_IS_FILEBUF<span class="token punctuation">)</span>
+    status <span class="token operator">=</span> <span class="token function">_IO_file_close_it</span> <span class="token punctuation">(</span>fp<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>最后调用 vtable 中的_IO_FINISH，其对应的是_IO_file_finish 函数，其中会调用 free 函数释放之前分配的 FILE 结构</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">_IO_FINISH</span> <span class="token punctuation">(</span>fp<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<h2 id="printf-puts"><a href="#printf-puts" class="headerlink" title="printf/puts"></a>printf/puts</h2><p>printf 和 puts 是常用的输出函数，在 printf 的参数是以’\n’结束的纯字符串时，printf 会被优化为 puts 函数并去除换行符。</p>
+<p>puts 在源码中实现的函数是_IO_puts，这个函数的操作与 fwrite 的流程大致相同，函数内部同样会调用 vtable 中的_IO_sputn，结果会执行_IO_new_file_xsputn，最后会调用到系统接口 write 函数。</p>
+<p>printf 的调用栈回溯如下，同样是通过_IO_file_xsputn 实现</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">vfprintf<span class="token operator">+</span><span class="token number">11</span>
+_IO_file_xsputn
+_IO_file_overflow
+funlockfile
+_IO_file_write
+write<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+              <a href="/tags/python2/" rel="tag"># python2</a>
+              <a href="/tags/ctf/" rel="tag"># ctf</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/post/pwn-unlink.html" rel="prev" title="pwn-unlink">
+      <i class="fa fa-chevron-left"></i> pwn-unlink
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/post/pwn-IO-FILE-%E4%BC%AA%E9%80%A0vtable.html" rel="next" title="pwn-IO_FILE-伪造vtable">
+      pwn-IO_FILE-伪造vtable <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%9D%E8%AF%86IO-FILE"><span class="nav-number">1.</span> <span class="nav-text">初识IO_FILE</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#FILE-%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.1.</span> <span class="nav-text">FILE 介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fread"><span class="nav-number">1.2.</span> <span class="nav-text">fread</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fwrite"><span class="nav-number">1.3.</span> <span class="nav-text">fwrite</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fopen"><span class="nav-number">1.4.</span> <span class="nav-text">fopen</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fclose"><span class="nav-number">1.5.</span> <span class="nav-text">fclose</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#printf-puts"><span class="nav-number">1.6.</span> <span class="nav-text">printf&#x2F;puts</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Mark0519"
+      src="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+  <p class="site-author-name" itemprop="name">Mark0519</p>
+  <div class="site-description" itemprop="description">菜鸡CTFer的自留地</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">65</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mark0519" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mark0519" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:sunjiajun@bupt.edu.cn" title="E-Mail → mailto:sunjiajun@bupt.edu.cn" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Mark0519</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.mark0519.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="C语言学习笔记1.1C字符串c字符串基本知识在C语言中，没有字符串变量，C语言保存字符串采用的是字符数组的形式。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C语言学习笔记——C字符串">
+<meta property="og:url" content="https://blog.mark0519.com/post/c-learn.html">
+<meta property="og:site_name" content="Mark&#39;s blog">
+<meta property="og:description" content="C语言学习笔记1.1C字符串c字符串基本知识在C语言中，没有字符串变量，C语言保存字符串采用的是字符数组的形式。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-10-29T15:26:03.000Z">
+<meta property="article:modified_time" content="2021-11-21T14:07:19.957Z">
+<meta property="article:author" content="Mark0519">
+<meta property="article:tag" content="c">
+<meta property="article:tag" content="str">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.mark0519.com/post/c-learn.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>C语言学习笔记——C字符串 | Mark's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mark's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/c-learn.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+      <meta itemprop="name" content="Mark0519">
+      <meta itemprop="description" content="菜鸡CTFer的自留地">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mark's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          C语言学习笔记——C字符串
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-10-29 23:26:03" itemprop="dateCreated datePublished" datetime="2020-10-29T23:26:03+08:00">2020-10-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-11-21 22:07:19" itemprop="dateModified" datetime="2021-11-21T22:07:19+08:00">2021-11-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="C语言学习笔记1-1"><a href="#C语言学习笔记1-1" class="headerlink" title="C语言学习笔记1.1"></a>C语言学习笔记1.1</h1><h2 id="C字符串"><a href="#C字符串" class="headerlink" title="C字符串"></a>C字符串</h2><h3 id="c字符串基本知识"><a href="#c字符串基本知识" class="headerlink" title="c字符串基本知识"></a>c字符串基本知识</h3><p>在C语言中，没有字符串变量，C语言保存字符串采用的是字符数组的形式。</p>
+<span id="more"></span>
+<p>C语言的字符串以null字符’\0’结束，例如字符串“HELLO”的定义：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">char</span> hello<span class="token punctuation">[</span><span class="token number">6</span><span class="token punctuation">]</span><span class="token operator">=</span><span class="token punctuation">&#123;</span><span class="token char">'H'</span><span class="token punctuation">,</span><span class="token char">'E'</span><span class="token punctuation">,</span><span class="token char">'L'</span><span class="token punctuation">,</span><span class="token char">'L'</span><span class="token punctuation">,</span><span class="token char">'O'</span><span class="token punctuation">,</span><span class="token char">'\0'</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>实际上，根据字符初始化规则，字符串hello只需要写出这样：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">char</span> hello<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">=</span><span class="token punctuation">&#123;</span><span class="token string">"HELLO"</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>以下是定义的字符串内存表示:</p>
+<table>
+<thead>
+<tr>
+<th align="center">Index</th>
+<th>0</th>
+<th>1</th>
+<th>2</th>
+<th>3</th>
+<th>4</th>
+<th align="left">5</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><strong>Variable</strong></td>
+<td>H</td>
+<td>E</td>
+<td>L</td>
+<td>L</td>
+<td>O</td>
+<td align="left">\0</td>
+</tr>
+<tr>
+<td align="center"><strong>Address</strong></td>
+<td>0x23451</td>
+<td>0x23452</td>
+<td>0x23453</td>
+<td>0x23454</td>
+<td>0x23455</td>
+<td align="left">0x23456</td>
+</tr>
+</tbody></table>
+<p>其实，不需要把 <em>null</em> 字符放在字符串常量的末尾。C 编译器会在初始化数组时，自动把 ‘\0’ 放在字符串的末尾，且在输出时null字符不可见。例如运行代码：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;stdio.h></span></span>
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token keyword">char</span> m<span class="token punctuation">[</span><span class="token number">6</span><span class="token punctuation">]</span><span class="token operator">=</span><span class="token punctuation">&#123;</span><span class="token char">'H'</span><span class="token punctuation">,</span><span class="token char">'E'</span><span class="token punctuation">,</span><span class="token char">'L'</span><span class="token punctuation">,</span><span class="token char">'L'</span><span class="token punctuation">,</span><span class="token char">'O'</span><span class="token punctuation">,</span><span class="token char">'\0'</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%s\n"</span><span class="token punctuation">,</span>m<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>编译之后，输出结果为：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">HELLO<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>这里特别提到，当想完整输出某个字符数组m[8]时，可直接写为：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%s"</span><span class="token punctuation">,</span>m<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//省略m[8]中的[8]</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>其中%s代表以字符串形式输出，而C语言中也有%c表示单个字符的输出。 </p>
+<h3 id="C语言中字符串输入"><a href="#C语言中字符串输入" class="headerlink" title="C语言中字符串输入"></a>C语言中字符串输入</h3><p>一般用：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">char</span> buf<span class="token punctuation">[</span><span class="token number">100</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+<span class="token function">gets</span><span class="token punctuation">(</span>buf<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>或者</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">char</span> buf<span class="token punctuation">[</span><span class="token number">100</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+<span class="token function">scanf</span><span class="token punctuation">(</span><span class="token string">"%s"</span><span class="token punctuation">,</span>buf<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p><strong>注意！</strong>在使用scnaf(“%s”,buf);时，输入的结尾一般为回车或者空格，所以scanf(“%s”,buf)没法在字符串中输入空格，而第一种使用gets()函数可以，但是，可以这样改进：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">char</span> buf<span class="token punctuation">[</span><span class="token number">100</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+<span class="token function">scanf</span><span class="token punctuation">(</span><span class="token string">"%[^\n]"</span><span class="token punctuation">,</span>buf<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>即可输入空格在字符串中。</p>
+<p>具体原理如下：</p>
+<p><strong><code>%[]</code>可以用来限制输入的内容，比如<code>%[0-9]</code>就表示只读入‘0’-‘9’之间的数字，<code>%[a-z]</code>表示只读入‘a’到‘z’之间的字母。我们这里的<code>%[^\n]</code>中的<code>^</code>就表示“非”的意思,<code>\n</code>就是我们平时所说的回车符，所以<code>%[^\n]</code>这个符号就是表示只读取 不是<code>\n</code>的字符。</strong></p>
+<p>但是用这种方式输入多组字符串时仍会出现问题，以为例如<code>%[^\n]</code>将会待接收到回车时停止，在数组buf中不含回车，但回车\n仍在缓冲区中，如果接下来仍有输入字符串，将会接收到这个\n，一般可以只用getchar()处理，如：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">char</span> buf1<span class="token punctuation">[</span><span class="token number">100</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+<span class="token keyword">char</span> buf2<span class="token punctuation">[</span><span class="token number">100</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+<span class="token function">scanf</span><span class="token punctuation">(</span><span class="token string">"%[^\n]"</span><span class="token punctuation">,</span>buf1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">getchar</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">scanf</span><span class="token punctuation">(</span><span class="token string">"%[^\n]"</span><span class="token punctuation">,</span>buf2<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+
+<h3 id="C语言中操作字符串的部分函数（需要使用-lt-string-h-gt-头文件）"><a href="#C语言中操作字符串的部分函数（需要使用-lt-string-h-gt-头文件）" class="headerlink" title="C语言中操作字符串的部分函数（需要使用&lt;string.h&gt;头文件）"></a>C语言中操作字符串的部分函数（需要使用&lt;string.h&gt;头文件）</h3><table>
+<thead>
+<tr>
+<th align="left">序号</th>
+<th>函数</th>
+<th>目的</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">1</td>
+<td><code>strcpy(s1,s2);</code></td>
+<td>复制字符串s2的内容到s1</td>
+</tr>
+<tr>
+<td align="left">2</td>
+<td><code>strcat(s1,s2);</code></td>
+<td>连接字符串s2到s1的结尾处</td>
+</tr>
+<tr>
+<td align="left">3</td>
+<td><code>strlen(s1);</code></td>
+<td>返回字符串s1的长度,不含null符</td>
+</tr>
+<tr>
+<td align="left">4</td>
+<td><code>strcmp(s1,s2);</code></td>
+<td>比较字符串s1和s2的大小</td>
+</tr>
+<tr>
+<td align="left">5</td>
+<td><code>strchr(s1,ch);</code></td>
+<td>返回一个指向s1中字符ch<strong>第一次</strong>出现的位置的指针,找不到返回NULL</td>
+</tr>
+<tr>
+<td align="left">6</td>
+<td><code>strrchr(s1,ch);</code></td>
+<td>返回一个指向s1中字符ch<strong>最后一次</strong>出现的位置的指针,找不到返回NULL</td>
+</tr>
+<tr>
+<td align="left">7</td>
+<td><code>strstr(s1,s2);</code></td>
+<td>返回一个指向s1中字符串s2<strong>第一次</strong>出现的位置的指针,找不到返回NULL</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>注意：strcmp(s1,s2)函数有两个参数，即要比较的两个字符串。strcmp()函数对两个字符串进行大小写敏感的(case-sensitiVe)和字典式的(lexicographic)比较，并返回下列值之一：</p>
+<table>
+<thead>
+<tr>
+<th>返回值</th>
+<th>意义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>&lt;0</td>
+<td>字符串s1小于字符串s2</td>
+</tr>
+<tr>
+<td>0</td>
+<td>字符串s1等于字符串s2</td>
+</tr>
+<tr>
+<td>&gt;0</td>
+<td>字符串s1大于字符串s2</td>
+</tr>
+</tbody></table>
+<p>具体用法作用见实例2</p>
+</blockquote>
+<p>下面是一些运用实例：</p>
+<h4 id="实例1（-strcpy-，strcat-，strlen-）"><a href="#实例1（-strcpy-，strcat-，strlen-）" class="headerlink" title="实例1（ strcpy()，strcat()，strlen() ）"></a>实例1（ strcpy()，strcat()，strlen() ）</h4><pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;stdio.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;string.h></span></span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">int</span> i<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span>
+	<span class="token keyword">char</span> s1<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">=</span><span class="token punctuation">&#123;</span><span class="token string">"hello_"</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+	<span class="token keyword">char</span> s2<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">=</span><span class="token punctuation">&#123;</span><span class="token string">"world"</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+	<span class="token keyword">char</span> s3<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">=</span><span class="token punctuation">&#123;</span><span class="token string">"empty"</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+	
+	<span class="token function">strcpy</span><span class="token punctuation">(</span>s3<span class="token punctuation">,</span>s2<span class="token punctuation">)</span><span class="token punctuation">;</span>           <span class="token comment">//strcpy()，复制字符串s2的内容到s1</span>
+	<span class="token function">strcat</span><span class="token punctuation">(</span>s1<span class="token punctuation">,</span>s3<span class="token punctuation">)</span><span class="token punctuation">;</span>           <span class="token comment">//strcat()，连接字符串s3到s1的结尾处</span>
+	i<span class="token operator">=</span><span class="token function">strlen</span><span class="token punctuation">(</span>s1<span class="token punctuation">)</span><span class="token punctuation">;</span>            <span class="token comment">//strlen()，返回字符串s1的长度,不含null符</span>
+	<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%d\n"</span><span class="token punctuation">,</span>i<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%s"</span><span class="token punctuation">,</span>s1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	
+	<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+ <span class="token punctuation">&#125;</span> <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>运行结果如下：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token number">11</span>
+hello_world<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h4 id="实例2（-strcmp-）"><a href="#实例2（-strcmp-）" class="headerlink" title="实例2（ strcmp() ）"></a>实例2（ strcmp() ）</h4><h5 id="strcmp"><a href="#strcmp" class="headerlink" title="strcmp()"></a>strcmp()</h5><pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;stdio.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;string.h></span></span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">int</span> j<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span>
+	<span class="token keyword">char</span> s1<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">=</span><span class="token punctuation">&#123;</span><span class="token string">"ABC"</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>   
+	<span class="token keyword">char</span> s2<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">=</span><span class="token punctuation">&#123;</span><span class="token string">"AbC"</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+	
+	<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"B = %d and b = %d\n"</span><span class="token punctuation">,</span><span class="token char">'B'</span><span class="token punctuation">,</span><span class="token char">'b'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>    <span class="token comment">//输出B和b的ASCII值</span>
+	j <span class="token operator">=</span> <span class="token function">strcmp</span><span class="token punctuation">(</span>s1<span class="token punctuation">,</span>s2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"strcmp(ABC,AbC) = %d\n"</span><span class="token punctuation">,</span>j<span class="token punctuation">)</span><span class="token punctuation">;</span>       <span class="token comment">//比较</span>
+	
+	<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>运行结果为：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">B <span class="token operator">=</span> <span class="token number">66</span> and b <span class="token operator">=</span> <span class="token number">98</span>
+<span class="token function">strcmp</span><span class="token punctuation">(</span>ABC<span class="token punctuation">,</span>AbC<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h5 id="strcmp-的一些变体"><a href="#strcmp-的一些变体" class="headerlink" title="strcmp()的一些变体"></a>strcmp()的一些变体</h5><table>
+<thead>
+<tr>
+<th>函数名</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>strcmp()</td>
+<td>对两个字符串进行大小写敏感的比较</td>
+</tr>
+<tr>
+<td>strcmpi()</td>
+<td>对两个字符串进行大小写不敏感的比较</td>
+</tr>
+<tr>
+<td>stricmp()</td>
+<td>同strcmpi()</td>
+</tr>
+<tr>
+<td>strncmp(s1,s2,n)</td>
+<td>把s1和s2进行比较，最多比较前 <strong>n</strong> 个字节(大小写敏感)</td>
+</tr>
+<tr>
+<td>strnicmp(s1,s2,n)</td>
+<td>把s1和s2进行比较，最多比较前 <strong>n</strong> 个字节(大小写<strong>不</strong>敏感)</td>
+</tr>
+</tbody></table>
+<p>如，如果将实例2中的strcmp(s1,s2)改成strmpi(s1,s2),则会返回 <strong>0</strong></p>
+<p>其他同理</p>
+<h4 id="实例3（-strchr-，strstr-）"><a href="#实例3（-strchr-，strstr-）" class="headerlink" title="实例3（ strchr() ，strstr() ）"></a>实例3（ strchr() ，strstr() ）</h4><pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;stdio.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;string.h></span></span>
+
+<span class="token keyword">int</span> <span class="token function">main</span> <span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+   <span class="token keyword">char</span> m<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">=</span><span class="token punctuation">&#123;</span><span class="token string">"https://mark0519.github.io/"</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+   <span class="token keyword">char</span> s1<span class="token operator">=</span><span class="token char">'.'</span><span class="token punctuation">;</span>
+   <span class="token keyword">char</span> s2<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">=</span><span class="token punctuation">&#123;</span><span class="token string">"mark"</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+   <span class="token keyword">char</span> <span class="token operator">*</span>p1<span class="token operator">=</span><span class="token constant">NULL</span><span class="token punctuation">;</span>
+   <span class="token keyword">char</span> <span class="token operator">*</span>p2<span class="token operator">=</span><span class="token constant">NULL</span><span class="token punctuation">;</span>
+   
+   p1<span class="token operator">=</span><span class="token function">strchr</span><span class="token punctuation">(</span>m<span class="token punctuation">,</span>s1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   p2<span class="token operator">=</span><span class="token function">strstr</span><span class="token punctuation">(</span>m<span class="token punctuation">,</span>s2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"The bytes after the '.' is %s\n"</span><span class="token punctuation">,</span>p1<span class="token punctuation">)</span><span class="token punctuation">;</span>     <span class="token comment">//输出结果会包含“.”</span>
+   <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"The bytes after the 'mark' is %s"</span><span class="token punctuation">,</span>p2<span class="token punctuation">)</span><span class="token punctuation">;</span>     
+   
+   <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>运行结果为：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">The bytes after the <span class="token char">'.'</span> is <span class="token punctuation">.</span>github<span class="token punctuation">.</span>io<span class="token operator">/</span>
+The bytes after the <span class="token char">'mark'</span> is mark0519<span class="token punctuation">.</span>github<span class="token punctuation">.</span>io<span class="token operator">/</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+
+
+
+
+
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/c/" rel="tag"># c</a>
+              <a href="/tags/str/" rel="tag"># str</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/post/find-share-folder-in-kali.html" rel="next" title="虚拟机重启后找不到共享文件夹的方法">
+      虚拟机重启后找不到共享文件夹的方法 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#C%E8%AF%AD%E8%A8%80%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-1"><span class="nav-number">1.</span> <span class="nav-text">C语言学习笔记1.1</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#C%E5%AD%97%E7%AC%A6%E4%B8%B2"><span class="nav-number">1.1.</span> <span class="nav-text">C字符串</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#c%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%9F%BA%E6%9C%AC%E7%9F%A5%E8%AF%86"><span class="nav-number">1.1.1.</span> <span class="nav-text">c字符串基本知识</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#C%E8%AF%AD%E8%A8%80%E4%B8%AD%E5%AD%97%E7%AC%A6%E4%B8%B2%E8%BE%93%E5%85%A5"><span class="nav-number">1.1.2.</span> <span class="nav-text">C语言中字符串输入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#C%E8%AF%AD%E8%A8%80%E4%B8%AD%E6%93%8D%E4%BD%9C%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%9A%84%E9%83%A8%E5%88%86%E5%87%BD%E6%95%B0%EF%BC%88%E9%9C%80%E8%A6%81%E4%BD%BF%E7%94%A8-lt-string-h-gt-%E5%A4%B4%E6%96%87%E4%BB%B6%EF%BC%89"><span class="nav-number">1.1.3.</span> <span class="nav-text">C语言中操作字符串的部分函数（需要使用&lt;string.h&gt;头文件）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B1%EF%BC%88-strcpy-%EF%BC%8Cstrcat-%EF%BC%8Cstrlen-%EF%BC%89"><span class="nav-number">1.1.3.1.</span> <span class="nav-text">实例1（ strcpy()，strcat()，strlen() ）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B2%EF%BC%88-strcmp-%EF%BC%89"><span class="nav-number">1.1.3.2.</span> <span class="nav-text">实例2（ strcmp() ）</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#strcmp"><span class="nav-number">1.1.3.2.1.</span> <span class="nav-text">strcmp()</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#strcmp-%E7%9A%84%E4%B8%80%E4%BA%9B%E5%8F%98%E4%BD%93"><span class="nav-number">1.1.3.2.2.</span> <span class="nav-text">strcmp()的一些变体</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B3%EF%BC%88-strchr-%EF%BC%8Cstrstr-%EF%BC%89"><span class="nav-number">1.1.3.3.</span> <span class="nav-text">实例3（ strchr() ，strstr() ）</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Mark0519"
+      src="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+  <p class="site-author-name" itemprop="name">Mark0519</p>
+  <div class="site-description" itemprop="description">菜鸡CTFer的自留地</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">65</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mark0519" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mark0519" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:sunjiajun@bupt.edu.cn" title="E-Mail → mailto:sunjiajun@bupt.edu.cn" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Mark0519</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
