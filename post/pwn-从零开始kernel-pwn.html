@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"blog.mark0519.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="从零开始 kernel pwn 入门0x00 内核基础0.内核kernel操作系统（Operation System）本质上也是一种软件，可以看作是普通应用程式与硬件之间的一层中间层，其主要作用便是调度系统资源、控制IO设备、操作网络与文件系统等，并为上层应用提供便捷、抽象的应用接口 而运行在内核态的内核（kernel）则是一个操作系统最为核心的部分，提供着一个操作系统最为基础的功能 在内核中使用">
+  <meta name="description" content="从零开始 kernel pwn 入门0x00 内核基础0.内核kernel操作系统（Operation System）本质上也是一种软件，可以看作是普通应用程式与硬件之间的一层中间层，其主要作用便是调度系统资源、控制IO设备、操作网络与文件系统等，并为上层应用提供便捷、抽象的应用接口">
 <meta property="og:type" content="article">
 <meta property="og:title" content="pwn-从零开始kernel pwn">
 <meta property="og:url" content="https://blog.mark0519.com/post/pwn-%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8Bkernel-pwn.html">
 <meta property="og:site_name" content="Mark&#39;s blog">
-<meta property="og:description" content="从零开始 kernel pwn 入门0x00 内核基础0.内核kernel操作系统（Operation System）本质上也是一种软件，可以看作是普通应用程式与硬件之间的一层中间层，其主要作用便是调度系统资源、控制IO设备、操作网络与文件系统等，并为上层应用提供便捷、抽象的应用接口 而运行在内核态的内核（kernel）则是一个操作系统最为核心的部分，提供着一个操作系统最为基础的功能 在内核中使用">
+<meta property="og:description" content="从零开始 kernel pwn 入门0x00 内核基础0.内核kernel操作系统（Operation System）本质上也是一种软件，可以看作是普通应用程式与硬件之间的一层中间层，其主要作用便是调度系统资源、控制IO设备、操作网络与文件系统等，并为上层应用提供便捷、抽象的应用接口">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-02-28T04:08:25.000Z">
-<meta property="article:modified_time" content="2022-02-28T13:07:48.767Z">
+<meta property="article:modified_time" content="2022-03-01T09:52:57.279Z">
 <meta property="article:author" content="Mark0519">
 <meta property="article:tag" content="pwn">
 <meta property="article:tag" content="ctf">
@@ -185,10 +185,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2022-02-28 12:08:25 / 修改时间：21:07:48" itemprop="dateCreated datePublished" datetime="2022-02-28T12:08:25+08:00">2022-02-28</time>
+              <time title="创建时间：2022-02-28 12:08:25" itemprop="dateCreated datePublished" datetime="2022-02-28T12:08:25+08:00">2022-02-28</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-01 17:52:57" itemprop="dateModified" datetime="2022-03-01T17:52:57+08:00">2022-03-01</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -211,6 +217,8 @@
 
       
         <h1 id="从零开始-kernel-pwn-入门"><a href="#从零开始-kernel-pwn-入门" class="headerlink" title="从零开始 kernel pwn 入门"></a>从零开始 kernel pwn 入门</h1><h2 id="0x00-内核基础"><a href="#0x00-内核基础" class="headerlink" title="0x00 内核基础"></a>0x00 内核基础</h2><h3 id="0-内核kernel"><a href="#0-内核kernel" class="headerlink" title="0.内核kernel"></a>0.内核kernel</h3><p><strong>操作系统</strong>（Operation System）本质上也是一种软件，可以看作是普通应用程式与硬件之间的一层中间层，其主要作用便是调度系统资源、控制IO设备、操作网络与文件系统等，并为上层应用提供便捷、抽象的应用接口</p>
+<span id="more"></span>
+
 <p>而运行在内核态的<strong>内核</strong>（<strong>kernel</strong>）则是<strong>一个操作系统最为核心的部分</strong>，提供着一个操作系统最为基础的功能</p>
 <p>在内核中使用结构体 <code>task_struct</code> 表示一个进程，该结构体定义于内核源码<code>include/linux/sched.h</code>中</p>
 <p><strong>Process credentials</strong> 是 kernel 用以判断一个进程权限的凭证，在 kernel 中使用 <code>cred</code> 结构体进行标识，对于一个进程而言应当有三个 cred：</p>
