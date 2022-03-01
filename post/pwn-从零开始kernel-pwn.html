@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.mark0519.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="从零开始 kernel pwn 入门0x00 内核基础0.内核kernel操作系统（Operation System）本质上也是一种软件，可以看作是普通应用程式与硬件之间的一层中间层，其主要作用便是调度系统资源、控制IO设备、操作网络与文件系统等，并为上层应用提供便捷、抽象的应用接口 而运行在内核态的内核（kernel）则是一个操作系统最为核心的部分，提供着一个操作系统最为基础的功能 在内核中使用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pwn-从零开始kernel pwn">
+<meta property="og:url" content="https://blog.mark0519.com/post/pwn-%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8Bkernel-pwn.html">
+<meta property="og:site_name" content="Mark&#39;s blog">
+<meta property="og:description" content="从零开始 kernel pwn 入门0x00 内核基础0.内核kernel操作系统（Operation System）本质上也是一种软件，可以看作是普通应用程式与硬件之间的一层中间层，其主要作用便是调度系统资源、控制IO设备、操作网络与文件系统等，并为上层应用提供便捷、抽象的应用接口 而运行在内核态的内核（kernel）则是一个操作系统最为核心的部分，提供着一个操作系统最为基础的功能 在内核中使用">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-02-28T04:08:25.000Z">
+<meta property="article:modified_time" content="2022-02-28T13:07:48.767Z">
+<meta property="article:author" content="Mark0519">
+<meta property="article:tag" content="pwn">
+<meta property="article:tag" content="ctf">
+<meta property="article:tag" content="kernel">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.mark0519.com/post/pwn-%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8Bkernel-pwn.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>pwn-从零开始kernel pwn | Mark's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mark's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/pwn-%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8Bkernel-pwn.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+      <meta itemprop="name" content="Mark0519">
+      <meta itemprop="description" content="菜鸡CTFer的自留地">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mark's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          pwn-从零开始kernel pwn
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-02-28 12:08:25 / 修改时间：21:07:48" itemprop="dateCreated datePublished" datetime="2022-02-28T12:08:25+08:00">2022-02-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PWN/" itemprop="url" rel="index"><span itemprop="name">PWN</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="从零开始-kernel-pwn-入门"><a href="#从零开始-kernel-pwn-入门" class="headerlink" title="从零开始 kernel pwn 入门"></a>从零开始 kernel pwn 入门</h1><h2 id="0x00-内核基础"><a href="#0x00-内核基础" class="headerlink" title="0x00 内核基础"></a>0x00 内核基础</h2><h3 id="0-内核kernel"><a href="#0-内核kernel" class="headerlink" title="0.内核kernel"></a>0.内核kernel</h3><p><strong>操作系统</strong>（Operation System）本质上也是一种软件，可以看作是普通应用程式与硬件之间的一层中间层，其主要作用便是调度系统资源、控制IO设备、操作网络与文件系统等，并为上层应用提供便捷、抽象的应用接口</p>
+<p>而运行在内核态的<strong>内核</strong>（<strong>kernel</strong>）则是<strong>一个操作系统最为核心的部分</strong>，提供着一个操作系统最为基础的功能</p>
+<p>在内核中使用结构体 <code>task_struct</code> 表示一个进程，该结构体定义于内核源码<code>include/linux/sched.h</code>中</p>
+<p><strong>Process credentials</strong> 是 kernel 用以判断一个进程权限的凭证，在 kernel 中使用 <code>cred</code> 结构体进行标识，对于一个进程而言应当有三个 cred：</p>
+<ul>
+<li><strong>ptracer_cred：</strong>使用<code>ptrace</code>系统调用跟踪该进程的上级进程的cred（gdb调试便是使用了这个系统调用，常见的反调试机制的原理便是提前占用了这个位置）</li>
+<li><strong>real_cred：</strong>即<strong>客体凭证</strong>（<strong>objective cred</strong>），通常是一个进程最初启动时所具有的权限</li>
+<li><strong>cred：</strong>即<strong>主体凭证</strong>（<strong>subjective cred</strong>），该进程的有效cred，kernel以此作为进程权限的凭证</li>
+</ul>
+<p>一个cred结构体中记载了<strong>一个进程四种不同的用户ID</strong>：</p>
+<ul>
+<li><strong>真实用户ID</strong>（real UID）：标识一个进程<strong>启动时的用户ID</strong></li>
+<li><strong>保存用户ID</strong>（saved UID）：标识一个进程<strong>最初的有效用户ID</strong></li>
+<li><strong>有效用户ID</strong>（effective UID）：标识一个进程<strong>正在运行时所属的用户ID</strong>，一个进程在运行途中是可以改变自己所属用户的，因而权限机制也是通过有效用户ID进行认证的，内核通过 euid 来进行特权判断；为了防止用户一直使用高权限，当任务完成之后，euid 会与 suid 进行交换，恢复进程的有效权限</li>
+<li><strong>文件系统用户ID</strong>（UID for VFS ops）：标识一个进程<strong>创建文件时进行标识的用户ID</strong></li>
+</ul>
+<p>在通常情况下这几个ID应当都是相同的</p>
+<p>用户组ID同样分为四个：<code>真实组ID</code>、<code>保存组ID</code>、<code>有效组ID</code>、<code>文件系统组ID</code>，与用户ID是类似的</p>
+<p>由于一个进程的权限是由位于内核空间的<code>cred</code>结构体进行管理的，所以只要改变一个进程的<code>cred</code>结构体，就能改变其执行权限</p>
+<p>在内核空间有如下两个函数，都位于<code>kernel/cred.c</code>中：</p>
+<ul>
+<li><code>struct cred* prepare_kernel_cred(struct task_struct* daemon)</code>：该函数用以拷贝一个进程的cred结构体，并返回一个新的cred结构体，需要注意的是<code>daemon</code>参数应为<strong>有效的进程描述符地址或NULL</strong></li>
+<li><code>int commit_creds(struct cred *new)</code>：该函数用以将一个新的<code>cred</code>结构体应用到进程</li>
+</ul>
+<p>在<code>prepare_kernel_cred()</code>函数中，若传入的参数为NULL，则会缺省使用<code>init</code>进程的<code>cred</code>作为模板进行拷贝，<strong>即可以直接获得一个标识着root权限的cred结构体</strong></p>
+<p>所以只要我们能够在内核空间执行<code>commit_creds(prepare_kernel_cred(NULL))</code>，那么就能够将当前进程的权限提升到<code>root</code></p>
+<h3 id="1-保护机制"><a href="#1-保护机制" class="headerlink" title="1.保护机制"></a>1.保护机制</h3><p><strong>KASLR</strong></p>
+<p>KASLR即<code>内核空间地址随机化</code>（kernel address space layout randomize），与用户态程序的ASLR相类似——在内核镜像映射到实际的地址空间时加上一个偏移值，但是内核内部的相对偏移其实还是不变的</p>
+<p>在未开启KASLR保护机制时，内核的基址为<code>0xffffffff81000000</code></p>
+<p><strong>FGKASLR</strong></p>
+<p>KASLR 虽然在一定程度上能够缓解攻击，但是若是攻击者通过一些信息泄露漏洞获取到内核中的某个地址，仍能够直接得知内核加载地址偏移从而得知整个内核地址布局，因此有研究者基于 KASLR 实现了 FGKASLR，<strong>以函数粒度重新排布内核代码</strong></p>
+<p><strong>STACK PROTECTOR</strong></p>
+<p>类似于用户态程序的canary，通常又被称作是stack cookie，用以检测<strong>是否发生内核堆栈溢出</strong>，若是发生内核堆栈溢出则会产生kernel panic</p>
+<p>内核中的canary的值通常取自gs段寄存器某个固定偏移处的值</p>
+<p><strong>SMAP/SMEP</strong></p>
+<p>SMAP即<code>管理模式访问保护</code>（Supervisor Mode Access Prevention），SMEP即<code>管理模式执行保护</code>（Supervisor Mode Execution Prevention），这两种保护通常是同时开启的，用以阻止<strong>内核空间直接访问/执行用户空间的数据</strong>，完全地将内核空间与用户空间相分隔开，用以防范ret2usr（return-to-user，将内核空间的指令指针重定向至用户空间上构造好的提权代码）攻击</p>
+<p>SMEP保护的绕过有以下两种方式：</p>
+<ul>
+<li>在设计中，为了使隔离的数据进行交换时具有更高的性能，隐性地址共享始终存在（VDSO &amp; VSYSCALL），<strong>用户态进程与内核共享同一块物理内存</strong>，因此通过隐性内存共享可以完整的绕过软件和硬件的隔离保护，这种攻击方式被称之为<code>ret2dir</code>（return-to-direct-mapped memory ）</li>
+<li>Intel下系统根据CR4控制寄存器的第20位标识是否开启SMEP保护（1为开启，0为关闭），若是能够通过kernel ROP改变CR4寄存器的值便能够关闭SMEP保护，完成SMEP-bypass，接下来就能够重新进行ret2usr</li>
+</ul>
+<p><strong>KPTI</strong></p>
+<p>KPTI即<code>内核页表隔离</code>（Kernel page-table isolation），内核空间与用户空间分别使用两组不同的页表集，这对于内核的内存管理产生了根本性的变化</p>
+<p><strong>KPTI 机制的出现使得 ret2usr 彻底成为过去式</strong></p>
+<h2 id="0x01-内核编译"><a href="#0x01-内核编译" class="headerlink" title="0x01 内核编译"></a>0x01 内核编译</h2><p>编译完成之后：</p>
+<ul>
+<li><strong>bzImage</strong>：目前主流的 kernel 镜像格式，即 big zImage（即 bz 不是指 bzip2），适用于较大的（大于 512 KB） Kernel。这个镜像会被加载到内存的高地址，高于 1MB。bzImage 是用 gzip 压缩的，文件的开头部分有 gzip 解压缩的代码，所以我们不能用 gunzip 来解压缩。</li>
+<li><strong>zImage</strong>：比较老的 kernel 镜像格式，适用于较小的（不大于 512KB） Kernel。启动时，这个镜像会被加载到内存的低地址，即内存的前 640 KB。zImage 也不能用 gunzip 来解压缩。</li>
+<li><strong>vmlinuz</strong>：vmlinuz 不仅包含了压缩后的 vmlinux，还包含了 gzip 解压缩的代码。实际上就是 zImage 或者 bzImage 文件。该文件是 bootable 的。 bootable 是指它能够把内核加载到内存中。对于 Linux 系统而言，该文件位于 /boot 目录下。该目录包含了启动系统时所需要的文件。</li>
+<li><strong>vmlinux</strong>：静态链接的 Linux kernel，以可执行文件的形式存在，尚未经过压缩。该文件往往是在生成 vmlinuz 的过程中产生的。该文件适合于调试。但是该文件不是 bootable 的。</li>
+<li><strong>vmlinux.bin</strong>：也是静态链接的 Linux kernel，只是以一个可启动的 (bootable) 二进制文件存在。所有的符号信息和重定位信息都被删除了。生成命令为：<code>objcopy -O binary vmlinux vmlinux.bin</code>。</li>
+<li><strong>uImage</strong>：uImage 是 U-boot 专用的镜像文件，它是在 zImage 之前加上了一个长度为 0x40 的 tag 而构成的。这个 tag 说明了这个镜像文件的类型、加载位置、生成时间、大小等信息。</li>
+</ul>
+<p><strong>一般kernel CTF会给出的文件</strong></p>
+<ol>
+<li>boot.sh: 一个用于启动 kernel 的 shell 的脚本，多用 qemu，保护措施与 qemu 不同的启动参数有关</li>
+<li>bzImage: kernel binary</li>
+<li>rootfs.cpio: 文件系统映像</li>
+</ol>
+<h2 id="0x02-Change-Self"><a href="#0x02-Change-Self" class="headerlink" title="0x02 Change Self"></a>0x02 Change Self</h2><h3 id="0-原理"><a href="#0-原理" class="headerlink" title="0.原理"></a>0.原理</h3><p>内核会通过进程的 <code>task_struct</code> 结构体中的 cred 指针来索引 cred 结构体，然后根据 cred 的内容来判断一个进程拥有的权限，如果 cred 结构体成员中的 uid-fsgid 都为 0，那一般就会认为进程具有 root 权限。</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">struct</span> <span class="token class-name">cred</span> <span class="token punctuation">&#123;</span>
+    <span class="token class-name">atomic_t</span>    usage<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">ifdef</span> <span class="token expression">CONFIG_DEBUG_CREDENTIALS</span></span>
+    <span class="token class-name">atomic_t</span>    subscribers<span class="token punctuation">;</span>    <span class="token comment">/* number of processes subscribed */</span>
+    <span class="token keyword">void</span>        <span class="token operator">*</span>put_addr<span class="token punctuation">;</span>
+    <span class="token keyword">unsigned</span>    magic<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">CRED_MAGIC</span>  <span class="token expression"><span class="token number">0x43736564</span></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">CRED_MAGIC_DEAD</span> <span class="token expression"><span class="token number">0x44656144</span></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+    <span class="token class-name">kuid_t</span>      uid<span class="token punctuation">;</span>        <span class="token comment">/* real UID of the task */</span>
+    <span class="token class-name">kgid_t</span>      gid<span class="token punctuation">;</span>        <span class="token comment">/* real GID of the task */</span>
+    <span class="token class-name">kuid_t</span>      suid<span class="token punctuation">;</span>       <span class="token comment">/* saved UID of the task */</span>
+    <span class="token class-name">kgid_t</span>      sgid<span class="token punctuation">;</span>       <span class="token comment">/* saved GID of the task */</span>
+    <span class="token class-name">kuid_t</span>      euid<span class="token punctuation">;</span>       <span class="token comment">/* effective UID of the task */</span>
+    <span class="token class-name">kgid_t</span>      egid<span class="token punctuation">;</span>       <span class="token comment">/* effective GID of the task */</span>
+    <span class="token class-name">kuid_t</span>      fsuid<span class="token punctuation">;</span>      <span class="token comment">/* UID for VFS ops */</span>
+    <span class="token class-name">kgid_t</span>      fsgid<span class="token punctuation">;</span>      <span class="token comment">/* GID for VFS ops */</span>
+  <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>因此，思路就比较直观了，我们可以通过以下方式来提权</p>
+<ul>
+<li>直接修改 cred 结构体的内容</li>
+<li>修改 task_struct 结构体中的 cred 指针指向一个满足要求的 cred</li>
+</ul>
+<p>无论是哪一种方法，一般都分为两步：定位，修改。</p>
+<h3 id="1-定位-cred"><a href="#1-定位-cred" class="headerlink" title="1.定位 cred"></a>1.定位 cred</h3><p><strong>直接定位</strong></p>
+<p>cred 结构体的最前面记录了各种 id 信息，对于一个普通的进程而言，uid-fsgid 都是执行进程的用户的身份。因此我们可以通过扫描内存来定位 cred。</p>
+<p><strong>在实际定位的过程中，我们可能会发现很多满足要求的 cred，这主要是因为 cred 结构体可能会被拷贝、释放。</strong>一个很直观的想法是在定位的过程中，利用 usage 不为 0 来筛除掉一些 cred，但仍然会发现一些 usage 为 0 的 cred。这是因为 cred 从 usage 为 0， 到释放有一定的时间。此外，cred 是使用 rcu 延迟释放的。</p>
+<p><strong>间接定位</strong></p>
+<p>task_struct：</p>
+<p>进程的 <code>task_struct</code> 结构体中会存放指向 cred 的指针，因此我们可以</p>
+<ol>
+<li>定位当前进程 <code>task_struct</code> 结构体的地址</li>
+<li>根据 cred 指针相对于 task_struct 结构体的偏移计算得出 <code>cred</code> 指针存储的地址</li>
+<li>获取 <code>cred</code> 具体的地址</li>
+</ol>
+<p>comm：</p>
+<p>comm 用来标记可执行文件的名字，位于进程的 <code>task_struct</code> 结构体中。我们可以发现 comm 其实在 cred 的正下方，所以我们也可以先定位 comm ，然后定位 cred 的地址。</p>
+<h3 id="2-修改-cred"><a href="#2-修改-cred" class="headerlink" title="2.修改 cred"></a>2.修改 cred</h3><ul>
+<li>修改 cred 指针为内核镜像中已有的 init_cred 的地址。这种方法适合于我们能够直接修改 cred 指针以及知道 init_cred 地址的情况。</li>
+<li>伪造一个 cred，然后修改 cred 指针指向该地址即可。这种方式比较麻烦，一般并不使用。</li>
+<li>我们还可以使用 commit_creds(prepare_kernel_cred(0)) 来进行提权，该方式会自动生成一个合法的 cred，并定位当前线程的 task_struct 的位置，然后修改它的 cred 为新的 cred。该方式比较适用于控制程序执行流后使用。</li>
+</ul>
+<h2 id="0x03-Change-Others"><a href="#0x03-Change-Others" class="headerlink" title="0x03 Change Others"></a>0x03 Change Others</h2><p>看不太懂之后再补充hh</p>
+<h2 id="0x04-参考"><a href="#0x04-参考" class="headerlink" title="0x04 参考"></a>0x04 参考</h2><p><a target="_blank" rel="noopener" href="https://ctf-wiki.org/pwn/linux/kernel-mode/environment/build-kernel/">CTF Wiki (ctf-wiki.org)</a></p>
+<p><a target="_blank" rel="noopener" href="https://xuanxuanblingbling.github.io/ctf/pwn/2021/08/05/kernel/">linux 内核 初探：运行你代码在内核态 | Clang裁缝店 (xuanxuanblingbling.github.io)</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/258874#h2-5">从零开始的 kernel pwn 入门 - I：Linux kernel 简易食用指南 - 安全客，安全资讯平台 (anquanke.com)</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+              <a href="/tags/ctf/" rel="tag"># ctf</a>
+              <a href="/tags/kernel/" rel="tag"># kernel</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/post/wp-HWS2022.html" rel="prev" title="wp-HWS2022">
+      <i class="fa fa-chevron-left"></i> wp-HWS2022
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/post/kernel-UAF.html" rel="next" title="kernel-UAF">
+      kernel-UAF <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B-kernel-pwn-%E5%85%A5%E9%97%A8"><span class="nav-number">1.</span> <span class="nav-text">从零开始 kernel pwn 入门</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x00-%E5%86%85%E6%A0%B8%E5%9F%BA%E7%A1%80"><span class="nav-number">1.1.</span> <span class="nav-text">0x00 内核基础</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#0-%E5%86%85%E6%A0%B8kernel"><span class="nav-number">1.1.1.</span> <span class="nav-text">0.内核kernel</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E4%BF%9D%E6%8A%A4%E6%9C%BA%E5%88%B6"><span class="nav-number">1.1.2.</span> <span class="nav-text">1.保护机制</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-%E5%86%85%E6%A0%B8%E7%BC%96%E8%AF%91"><span class="nav-number">1.2.</span> <span class="nav-text">0x01 内核编译</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-Change-Self"><span class="nav-number">1.3.</span> <span class="nav-text">0x02 Change Self</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#0-%E5%8E%9F%E7%90%86"><span class="nav-number">1.3.1.</span> <span class="nav-text">0.原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%AE%9A%E4%BD%8D-cred"><span class="nav-number">1.3.2.</span> <span class="nav-text">1.定位 cred</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E4%BF%AE%E6%94%B9-cred"><span class="nav-number">1.3.3.</span> <span class="nav-text">2.修改 cred</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-Change-Others"><span class="nav-number">1.4.</span> <span class="nav-text">0x03 Change Others</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x04-%E5%8F%82%E8%80%83"><span class="nav-number">1.5.</span> <span class="nav-text">0x04 参考</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Mark0519"
+      src="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+  <p class="site-author-name" itemprop="name">Mark0519</p>
+  <div class="site-description" itemprop="description">菜鸡CTFer的自留地</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">68</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mark0519" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mark0519" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:sunjiajun@bupt.edu.cn" title="E-Mail → mailto:sunjiajun@bupt.edu.cn" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Mark0519</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

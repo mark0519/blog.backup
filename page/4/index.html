@@ -158,6 +158,168 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/pwn-Tcache-Attack.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+      <meta itemprop="name" content="Mark0519">
+      <meta itemprop="description" content="菜鸡CTFer的自留地">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mark's blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/post/pwn-Tcache-Attack.html" class="post-title-link" itemprop="url">pwn-Tcache_Attack</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-10 23:18:59" itemprop="dateCreated datePublished" datetime="2021-07-10T23:18:59+08:00">2021-07-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-11-21 22:17:27" itemprop="dateModified" datetime="2021-11-21T22:17:27+08:00">2021-11-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PWN/" itemprop="url" rel="index"><span itemprop="name">PWN</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Tcache-Attack"><a href="#Tcache-Attack" class="headerlink" title="Tcache Attack"></a>Tcache Attack</h1><p>其实做题时遇到过很多次tcache的东西，但一直没有系统的整理过一次。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/post/pwn-Tcache-Attack.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/pwn-House-of-Force.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
+      <meta itemprop="name" content="Mark0519">
+      <meta itemprop="description" content="菜鸡CTFer的自留地">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mark's blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/post/pwn-House-of-Force.html" class="post-title-link" itemprop="url">pwn-House_of_Force</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-07-09 22:54:42" itemprop="dateCreated datePublished" datetime="2021-07-09T22:54:42+08:00">2021-07-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-11-21 22:16:06" itemprop="dateModified" datetime="2021-11-21T22:16:06+08:00">2021-11-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PWN/" itemprop="url" rel="index"><span itemprop="name">PWN</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="House-of-Force"><a href="#House-of-Force" class="headerlink" title="House of Force"></a>House of Force</h1><p>上一篇（House of Orange）是修改top chunk的size来在没有free操作下构造被free的堆块(unsorted bin),同时还有一个技巧叫的House of Force，同样是修改top chunk的size位，使得 top chunk 指向期望的任何位置，这就相当于一次任意地址写。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/post/pwn-House-of-Force.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/pwn-House-of-Orange.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -794,174 +956,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/pwn-dasctf-fruitpie.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
-      <meta itemprop="name" content="Mark0519">
-      <meta itemprop="description" content="菜鸡CTFer的自留地">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Mark's blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/post/pwn-dasctf-fruitpie.html" class="post-title-link" itemprop="url">pwn-dasctf_fruitpie</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-03-28 14:28:36" itemprop="dateCreated datePublished" datetime="2021-03-28T14:28:36+08:00">2021-03-28</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-21 22:15:42" itemprop="dateModified" datetime="2021-11-21T22:15:42+08:00">2021-11-21</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/PWN/" itemprop="url" rel="index"><span itemprop="name">PWN</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="DASctf-fruitpie-WP"><a href="#DASctf-fruitpie-WP" class="headerlink" title="DASctf_fruitpie WP"></a>DASctf_fruitpie WP</h1><p>记录下我第一次在比较正式的比赛中做出heap题。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/post/pwn-dasctf-fruitpie.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://blog.mark0519.com/post/pwn-uaf1.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://pic.imgdb.cn/item/5fbd287eb18d627113535cf8.png">
-      <meta itemprop="name" content="Mark0519">
-      <meta itemprop="description" content="菜鸡CTFer的自留地">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Mark's blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/post/pwn-uaf1.html" class="post-title-link" itemprop="url">pwn-uaf1</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-03-24 21:24:35" itemprop="dateCreated datePublished" datetime="2021-03-24T21:24:35+08:00">2021-03-24</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-21 22:17:23" itemprop="dateModified" datetime="2021-11-21T22:17:23+08:00">2021-11-21</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/PWN/" itemprop="url" rel="index"><span itemprop="name">PWN</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="UAF-HITCON-training-hacknote"><a href="#UAF-HITCON-training-hacknote" class="headerlink" title="UAF - [HITCON-training]hacknote"></a>UAF - [HITCON-training]hacknote</h1><h2 id="UAF（Use-After-Free）"><a href="#UAF（Use-After-Free）" class="headerlink" title="UAF（Use After Free）"></a>UAF（Use After Free）</h2><p>简单的说，Use After Free 就是其字面所表达的意思，当一个内存块被释放之后再次被使用。但是其实这里有以下几种情况</p>
-<ul>
-<li>内存块被释放后，其对应的指针被设置为 NULL ， 然后再次使用，自然程序会崩溃。</li>
-<li>内存块被释放后，其对应的指针没有被设置为 NULL ，然后在它下一次被使用之前，没有代码对这块内存块进行修改，那么<strong>程序很有可能可以正常运转</strong>。</li>
-<li>内存块被释放后，其对应的指针没有被设置为 NULL，但是在它下一次使用之前，有代码对这块内存进行了修改，那么当程序再次使用这块内存时，<strong>就很有可能会出现奇怪的问题</strong>。</li>
-</ul>
-<p>而我们一般所指的 <strong>Use After Free</strong> 漏洞主要是后两种。此外，<strong>我们一般称被释放后没有被设置为 NULL 的内存指针为 dangling pointer。</strong></p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/post/pwn-uaf1.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1032,7 +1026,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">66</span>
+          <span class="site-state-item-count">68</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1041,7 +1035,7 @@
         <span class="site-state-item-name">分类</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-count">24</span>
         <span class="site-state-item-name">标签</span>
       </div>
   </nav>
